@@ -1,0 +1,36 @@
+/* Global */
+body {
+    padding: 25px;
+}
+
+/* Utilities */
+.top-spacing {
+    padding-top: 40px;
+}
+
+/* Header */
+.flex-header {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+.profile-img {
+    width: 100px;
+    border-radius: 50%;
+    image-rendering: pixelated;
+}
+
+/* Dialog */
+.nes-dialog {
+    width: 500px;
+    text-align: center;
+}
+.dialog-menu {
+    margin: 0 auto;
+    padding: 0px;
+}
+.skill-box {
+    padding-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+}
