@@ -4,7 +4,7 @@ body {
 }
 
 /* Utilities */
-.top-spacing {
+.seperator {
     padding-top: 40px;
 }
 
@@ -18,6 +18,19 @@ body {
     width: 100px;
     border-radius: 50%;
     image-rendering: pixelated;
+}
+
+/* About Me */
+.about-me-section {
+    width: 95%
+}
+
+/* Skills */
+.skill-section {
+    width: 85%
+}
+.nes-btn {
+    margin-top: 9px;
 }
 
 /* Dialog */
@@ -35,7 +48,14 @@ body {
     justify-content: space-between;
 }
 
-/* Buttons */
-.nes-btn {
-    margin-top: 9px;
+/* Resume Download */
+.message-box {
+    position: absolute;
+    right: 22px;
+    bottom: 99px;
+}
+.character {
+    position: absolute;
+    right: 7px;
+    bottom: 6px;
 }
