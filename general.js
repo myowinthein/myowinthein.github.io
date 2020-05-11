@@ -3,7 +3,9 @@ window.addEventListener('load', (event) => {
     const backendButton = document.getElementById('backend-button')
     const frontendButton = document.getElementById('frontend-button')
     const cmsButton = document.getElementById('cms-button')
+    const mpButton = document.getElementById('mp-button')
     const databaseButton = document.getElementById('database-button')
+    const pmButton = document.getElementById('pm-button')
     const toolsButton = document.getElementById('tools-button')
     const osButton = document.getElementById('os-button')
     const serverButton = document.getElementById('server-button')
@@ -11,7 +13,9 @@ window.addEventListener('load', (event) => {
     const backendDialog = document.getElementById('backend-dialog')
     const frontendDialog = document.getElementById('frontend-dialog')
     const cmsDialog = document.getElementById('cms-dialog')
+    const mpDialog = document.getElementById('mp-dialog')
     const databaseDialog = document.getElementById('database-dialog')
+    const pmDialog = document.getElementById('pm-dialog')
     const toolsDialog = document.getElementById('tools-dialog')
     const osDialog = document.getElementById('os-dialog')
     const serverDialog = document.getElementById('server-dialog')
@@ -29,8 +33,16 @@ window.addEventListener('load', (event) => {
         cmsDialog.showModal()
     })
 
+    mpButton.addEventListener('click', function() {
+        mpDialog.showModal()
+    })
+
     databaseButton.addEventListener('click', function() {
         databaseDialog.showModal()
+    })
+
+    pmButton.addEventListener('click', function() {
+        pmDialog.showModal()
     })
 
     toolsButton.addEventListener('click', function() {

@@ -34,3 +34,8 @@ body {
     display: flex;
     justify-content: space-between;
 }
+
+/* Buttons */
+.nes-btn {
+    margin-top: 9px;
+}
