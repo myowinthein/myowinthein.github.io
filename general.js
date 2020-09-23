@@ -1,59 +1,59 @@
 window.addEventListener('load', (event) => {
     // prepare variables
-    const backendButton = document.getElementById('backend-button')
+    const webDesignButton = document.getElementById('web-design-button')
     const frontendButton = document.getElementById('frontend-button')
+    const backendButton = document.getElementById('backend-button')
     const cmsButton = document.getElementById('cms-button')
-    const mpButton = document.getElementById('mp-button')
-    const databaseButton = document.getElementById('database-button')
+    const dbmsButton = document.getElementById('dbms-button')
+    const awsButton = document.getElementById('aws-button')
     const pmButton = document.getElementById('pm-button')
-    const toolsButton = document.getElementById('tools-button')
-    const osButton = document.getElementById('os-button')
-    const serverButton = document.getElementById('server-button')
+    const toolingButton = document.getElementById('tooling-button')
+    const operatingSystemButton = document.getElementById('operating-system-button')
 
-    const backendDialog = document.getElementById('backend-dialog')
+    const webDesignDialog = document.getElementById('web-design-dialog')
     const frontendDialog = document.getElementById('frontend-dialog')
+    const backendDialog = document.getElementById('backend-dialog')
     const cmsDialog = document.getElementById('cms-dialog')
-    const mpDialog = document.getElementById('mp-dialog')
-    const databaseDialog = document.getElementById('database-dialog')
+    const dbmsDialog = document.getElementById('dbms-dialog')
+    const awsDialog = document.getElementById('aws-dialog')
     const pmDialog = document.getElementById('pm-dialog')
-    const toolsDialog = document.getElementById('tools-dialog')
-    const osDialog = document.getElementById('os-dialog')
-    const serverDialog = document.getElementById('server-dialog')
+    const toolingDialog = document.getElementById('tooling-dialog')
+    const operatingSystemDialog = document.getElementById('operating-system-dialog')
 
     // events
-    backendButton.addEventListener('click', function() {
-        backendDialog.showModal()
+    webDesignButton.addEventListener('click', function() {
+        webDesignDialog.showModal()
     })
 
     frontendButton.addEventListener('click', function() {
         frontendDialog.showModal()
     })
 
+    backendButton.addEventListener('click', function() {
+        backendDialog.showModal()
+    })
+
     cmsButton.addEventListener('click', function() {
         cmsDialog.showModal()
     })
 
-    mpButton.addEventListener('click', function() {
-        mpDialog.showModal()
+    dbmsButton.addEventListener('click', function() {
+        dbmsDialog.showModal()
     })
 
-    databaseButton.addEventListener('click', function() {
-        databaseDialog.showModal()
+    awsButton.addEventListener('click', function() {
+        awsDialog.showModal()
     })
 
     pmButton.addEventListener('click', function() {
         pmDialog.showModal()
     })
 
-    toolsButton.addEventListener('click', function() {
-        toolsDialog.showModal()
+    toolingButton.addEventListener('click', function() {
+        toolingDialog.showModal()
     })
 
-    osButton.addEventListener('click', function() {
-        osDialog.showModal()
-    })
-
-    serverButton.addEventListener('click', function() {
-        serverDialog.showModal()
+    operatingSystemButton.addEventListener('click', function() {
+        operatingSystemDialog.showModal()
     })
 })

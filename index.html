@@ -3,7 +3,7 @@
         <!-- Title and Logo -->
         <title>Myo Win Thin</title>
         <link rel="icon" href="images/favicon.ico">
-        
+
         <!-- Primary Meta Tags -->
         <title>Myo Win Thein (Martin)</title>
         <meta name="title" content="Myo Win Thein (Martin)">
@@ -34,7 +34,7 @@
         <script src="general.js"></script>
     </head>
     <body>
-        <!-- header -->
+        <!-- Header -->
         <div class="nes-container is-rounded is-dark flex-header">
             <!-- profile image -->
             <div>
@@ -92,48 +92,19 @@
         <div class="seperator skill-section">
             <h3 class="nes-text is-primary"># Skills</h3>
 
-            <!-- buttons-->
-            <button type="button" id="backend-button" class="nes-btn is-primary">Backend</button>
-            <button type="button" id="frontend-button" class="nes-btn is-success">Frontend</button>
-            <button type="button" id="cms-button" class="nes-btn is-warning">CMS</button>
-            <button type="button" id="mp-button" class="nes-btn is-error">Multi-Purpose</button>
-            <button type="button" id="database-button" class="nes-btn">Database</button>
-            <button type="button" id="pm-button" class="nes-btn is-primary">Package Managers</button>
-            <button type="button" id="tools-button" class="nes-btn is-success">Tools</button>
-            <button type="button" id="os-button" class="nes-btn is-warning">Operation Systems</button>
-            <button type="button" id="server-button" class="nes-btn is-error">Server</button>
+            <!-- Buttons-->
+            <button type="button" id="web-design-button" class="nes-btn is-primary">Web Design</button>
+            <button type="button" id="frontend-button" class="nes-btn is-success">Front-End</button>
+            <button type="button" id="backend-button" class="nes-btn is-warning">Backend</button>
+            <button type="button" id="cms-button" class="nes-btn is-error">CMS</button>
+            <button type="button" id="dbms-button" class="nes-btn">DBMS</button>
+            <button type="button" id="aws-button" class="nes-btn is-primary">AWS</button>
+            <button type="button" id="pm-button" class="nes-btn is-success">Package Manager</button>
+            <button type="button" id="tooling-button" class="nes-btn is-warning">Tooling</button>
+            <button type="button" id="operating-system-button" class="nes-btn is-error">Operating System</button>
 
-            <!-- Dialogs -->
-            <dialog id="backend-dialog" class="nes-dialog is-rounded">
-                <form method="dialog">
-                    <p class="title">Backend</p>
-                    <div class="skill-box">
-                        <span>PHP</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                        </div>
-                    </div>
-                    <div class="skill-box">
-                        <span>Laravel</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-half"></i>
-                        </div>
-                    </div>                    
-                    <menu class="dialog-menu">
-                        <button class="nes-btn">Close</button>
-                    </menu>
-                </form>
-            </dialog>
-
-            <dialog id="frontend-dialog" class="nes-dialog is-rounded">
+            <!-- Web Dialog -->
+            <dialog id="web-design-dialog" class="nes-dialog is-rounded">
                 <form method="dialog">
                     <p class="title">Frontend</p>
                     <div class="skill-box">
@@ -186,6 +157,16 @@
                             <i class="nes-icon is-small star is-transparent"></i>
                         </div>
                     </div>
+                    <menu class="dialog-menu">
+                        <button class="nes-btn">Close</button>
+                    </menu>
+                </form>
+            </dialog>
+
+            <!-- Front-End Dialog -->
+            <dialog id="frontend-dialog" class="nes-dialog is-rounded">
+                <form method="dialog">
+                    <p class="title">Frontend</p>
                     <div class="skill-box">
                         <span>JavaScript</span>
                         <div>
@@ -207,12 +188,72 @@
                         </div>
                     </div>
                     <div class="skill-box">
-                        <span>Vue/Nuxt</span>
+                        <span>Vue.js</span>
                         <div>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>Nuxt.js</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <menu class="dialog-menu">
+                        <button class="nes-btn">Close</button>
+                    </menu>
+                </form>
+            </dialog>
+
+            <!-- Backend Dialog -->
+            <dialog id="backend-dialog" class="nes-dialog is-rounded">
+                <form method="dialog">
+                    <p class="title">Backend</p>
+                    <div class="skill-box">
+                        <span>PHP</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>Laravel</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>C#.NET</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>ASP.NET</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
                             <i class="nes-icon is-small star is-transparent"></i>
                         </div>
                     </div>
@@ -222,6 +263,7 @@
                 </form>
             </dialog>
 
+            <!-- CMS Dialog -->
             <dialog id="cms-dialog" class="nes-dialog is-rounded">
                 <form method="dialog">
                     <p class="title">CMS</p>
@@ -251,40 +293,22 @@
                 </form>
             </dialog>
 
-            <dialog id="mp-dialog" class="nes-dialog is-rounded">
-                <form method="dialog">
-                    <p class="title">Multi-Purpose</p>
-                    <div class="skill-box">
-                        <span>C#.NET</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                        </div>
-                    </div>
-                    <div class="skill-box">
-                        <span>ASP.NET</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                        </div>
-                    </div>
-                    <menu class="dialog-menu">
-                        <button class="nes-btn">Close</button>
-                    </menu>
-                </form>
-            </dialog>
-
-            <dialog id="database-dialog" class="nes-dialog is-rounded">
+            <!-- DBMS Dialog -->
+            <dialog id="dbms-dialog" class="nes-dialog is-rounded">
                 <form method="dialog">
                     <p class="title">Database</p>
                     <div class="skill-box">
                         <span>MySQL</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>MariaDB</span>
                         <div>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
@@ -299,7 +323,7 @@
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-half"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
                             <i class="nes-icon is-small star is-transparent"></i>
                         </div>
                     </div>
@@ -309,7 +333,7 @@
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
                             <i class="nes-icon is-small star is-transparent"></i>
                         </div>
                     </div>
@@ -319,9 +343,70 @@
                 </form>
             </dialog>
 
+            <!-- AWS Dialog -->
+            <dialog id="aws-dialog" class="nes-dialog is-rounded">
+                <form method="dialog">
+                    <p class="title">AWS</p>
+                    <div class="skill-box">
+                        <span>IAM</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>EC2</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>RDS</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>S3</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>Transcoder</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                        </div>
+                    </div>
+                    <menu class="dialog-menu">
+                        <button class="nes-btn">Close</button>
+                    </menu>
+                </form>
+            </dialog>
+
+            <!-- Package Manager Dialog -->
             <dialog id="pm-dialog" class="nes-dialog is-rounded">
                 <form method="dialog">
-                    <p class="title">Package Managers</p>           
+                    <p class="title">Package Managers</p>
                     <div class="skill-box">
                         <span>NPM</span>
                         <div>
@@ -351,36 +436,17 @@
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star is-half"></i>
                         </div>
-                    </div>                   
+                    </div>
                     <menu class="dialog-menu">
                         <button class="nes-btn">Close</button>
                     </menu>
                 </form>
             </dialog>
 
-            <dialog id="tools-dialog" class="nes-dialog is-rounded">
+            <!-- Tooling Dialog -->
+            <dialog id="tooling-dialog" class="nes-dialog is-rounded">
                 <form method="dialog">
-                    <p class="title">Tools</p>
-                    <div class="skill-box">
-                        <span>Bash</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                        </div>
-                    </div>                    
-                    <div class="skill-box">
-                        <span>NPM Script</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                        </div>
-                    </div>
+                    <p class="title">tooling</p>
                     <div class="skill-box">
                         <span>Git</span>
                         <div>
@@ -398,7 +464,17 @@
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-half"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>Bash</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-transparent"></i>
                         </div>
                     </div>
                     <div class="skill-box">
@@ -409,64 +485,6 @@
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
                             <i class="nes-icon is-small star"></i>
-                        </div>
-                    </div>
-                    <menu class="dialog-menu">
-                        <button class="nes-btn">Close</button>
-                    </menu>
-                </form>
-            </dialog>
-
-            <dialog id="os-dialog" class="nes-dialog is-rounded">
-                <form method="dialog">
-                    <p class="title">Operating Systems</p>
-                    <div class="skill-box">
-                        <span>Windows</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                        </div>
-                    </div>
-                    <div class="skill-box">
-                        <span>MacOS</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-half"></i>
-                        </div>
-                    </div>
-                    <div class="skill-box">
-                        <span>Linux</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-half"></i>
-                        </div>
-                    </div>
-                    <menu class="dialog-menu">
-                        <button class="nes-btn">Close</button>
-                    </menu>
-                </form>
-            </dialog>
-
-            <dialog id="server-dialog" class="nes-dialog is-rounded">
-                <form method="dialog">
-                    <p class="title">Server</p>                    
-                    <div class="skill-box">
-                        <span>AWS</span>
-                        <div>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
-                            <i class="nes-icon is-small star is-transparent"></i>
                         </div>
                     </div>
                     <div class="skill-box">
@@ -484,13 +502,53 @@
                     </menu>
                 </form>
             </dialog>
-        </div>      
+
+            <!-- Operating System Dialog -->
+            <dialog id="operating-system-dialog" class="nes-dialog is-rounded">
+                <form method="dialog">
+                    <p class="title">Operating Systems</p>
+                    <div class="skill-box">
+                        <span>Windows</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>macOS</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <div class="skill-box">
+                        <span>Linux (Ubuntu)</span>
+                        <div>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star"></i>
+                            <i class="nes-icon is-small star is-half"></i>
+                        </div>
+                    </div>
+                    <menu class="dialog-menu">
+                        <button class="nes-btn">Close</button>
+                    </menu>
+                </form>
+            </dialog>
+        </div>
 
         <!-- Resume Download -->
         <div class="nes-balloon from-right message-box">
             <p>CV Here!</p>
         </div>
-        
+
         <a href="https://drive.google.com/file/d/1YotETd6k9MhTPgbTANF7sBZ9zne3jPKJ/view?usp=sharing" download>
             <i class="nes-octocat animate character"></i>
         </a>
