@@ -5,6 +5,7 @@ window.addEventListener('load', (event) => {
     const backendButton = document.getElementById('backend-button')
     const cmsButton = document.getElementById('cms-button')
     const dbmsButton = document.getElementById('dbms-button')
+    const serverButton = document.getElementById('server-button')
     const awsButton = document.getElementById('aws-button')
     const pmButton = document.getElementById('pm-button')
     const toolingButton = document.getElementById('tooling-button')
@@ -15,6 +16,7 @@ window.addEventListener('load', (event) => {
     const backendDialog = document.getElementById('backend-dialog')
     const cmsDialog = document.getElementById('cms-dialog')
     const dbmsDialog = document.getElementById('dbms-dialog')
+    const serverDialog = document.getElementById('server-dialog')
     const awsDialog = document.getElementById('aws-dialog')
     const pmDialog = document.getElementById('pm-dialog')
     const toolingDialog = document.getElementById('tooling-dialog')
@@ -39,6 +41,10 @@ window.addEventListener('load', (event) => {
 
     dbmsButton.addEventListener('click', function() {
         dbmsDialog.showModal()
+    })
+
+    serverButton.addEventListener('click', function() {
+        serverDialog.showModal()
     })
 
     awsButton.addEventListener('click', function() {
