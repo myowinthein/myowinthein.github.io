@@ -22,8 +22,4 @@ To deploy changes, push to `main` — GitHub Pages publishes automatically.
 
 This is a personal site. Issues and PRs are not expected.
 
-## License
-
-MIT
-
 <!-- last-reviewed: 0f4ba3f73772901ad71021bdae3352c5586e2f04 -->
