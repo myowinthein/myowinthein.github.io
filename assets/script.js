@@ -39,7 +39,7 @@ const grid = document.getElementById('grid');
 fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated`)
   .then(res => res.json())
   .then(repos => {
-    const paged = repos.filter(r => r.has_pages && !r.fork && r.name !== SELF_REPO);
+    const paged = repos.filter(r => r.has_pages && !r.fork && r.name !== SELF_REPO && r.homepage);
 
     if (paged.length === 0) {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
@@ -47,8 +47,7 @@ fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updat
     }
 
     grid.innerHTML = paged.map(r => {
-      const fallback = `https://${SELF_REPO}/${r.name}`;
-      const url  = r.homepage ? safeUrl(r.homepage, fallback) : fallback;
+      const url  = safeUrl(r.homepage, `https://${SELF_REPO}/${r.name}`);
       const desc = escapeHtml(r.description || '');
       const name = escapeHtml(r.name);
       return `
