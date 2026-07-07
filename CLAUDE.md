@@ -41,4 +41,10 @@ Open `index.html` directly in a browser for local preview. No install, no build 
   excludes the `myowinthein.github.io` repo itself (lines 25-26 of script.js)
 - The API is unauthenticated — rate-limited to 60 req/hr per IP; no auth token is wired up
 
+## Rules
+
+This project follows the rules shipped in claude-helm:
+- ~/.claude/plugins/marketplaces/claude-helm/rules/git.md
+- ~/.claude/plugins/marketplaces/claude-helm/rules/safety.md
+
 <!-- last-reviewed: 4e87c64de457a1bb5fe9739e1d262e074807cbd1 -->
