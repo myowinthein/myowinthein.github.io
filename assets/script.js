@@ -18,11 +18,28 @@ btn.addEventListener('click', () => {
 });
 
 // Projects
-fetch('https://api.github.com/users/myowinthein/repos?per_page=100&sort=updated')
+const GITHUB_USER = 'myowinthein';
+const SELF_REPO   = `${GITHUB_USER}.github.io`;
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function safeUrl(raw, fallback) {
+  try {
+    const u = new URL(raw);
+    return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const grid = document.getElementById('grid');
+
+fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated`)
   .then(res => res.json())
   .then(repos => {
-    const grid = document.getElementById('grid');
-    const paged = repos.filter(r => r.has_pages && !r.fork && r.name !== 'myowinthein.github.io');
+    const paged = repos.filter(r => r.has_pages && !r.fork && r.name !== SELF_REPO);
 
     if (paged.length === 0) {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
@@ -30,16 +47,18 @@ fetch('https://api.github.com/users/myowinthein/repos?per_page=100&sort=updated'
     }
 
     grid.innerHTML = paged.map(r => {
-      const url = r.homepage || `https://myowinthein.github.io/${r.name}`;
-      const desc = r.description || '';
+      const fallback = `https://${SELF_REPO}/${r.name}`;
+      const url  = r.homepage ? safeUrl(r.homepage, fallback) : fallback;
+      const desc = escapeHtml(r.description || '');
+      const name = escapeHtml(r.name);
       return `
         <a class="card" href="${url}" target="_blank">
-          <div class="card-name">${r.name}</div>
+          <div class="card-name">${name}</div>
           <div class="card-desc">${desc}</div>
           <div class="card-link">View site →</div>
         </a>`;
     }).join('');
   })
   .catch(() => {
-    document.getElementById('grid').innerHTML = '<p class="loading">Could not load projects.</p>';
+    grid.innerHTML = '<p class="loading">Could not load projects.</p>';
   });
