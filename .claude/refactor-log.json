@@ -1,0 +1,56 @@
+{
+  "last_scanned_commit": "9e409094eccbb86b697e2c8b6d9edf60010bbde2",
+  "last_mode": "deep",
+  "last_scan_date": "2026-07-09",
+  "consecutive_quick_count": 0,
+  "findings": [
+    {
+      "id": "f-0001",
+      "category": "code-quality",
+      "priority": "high",
+      "risk": "safe",
+      "cluster_id": "c-001",
+      "depends_on": [],
+      "file": "index.html:24, assets/script.js:54",
+      "line": 24,
+      "description": "External links with target=\"_blank\" are missing rel=\"noopener noreferrer\", allowing opened pages to access window.opener (tab-napping vector).",
+      "status": "fixed",
+      "first_found_commit": "9e409094eccbb86b697e2c8b6d9edf60010bbde2",
+      "first_found_date": "2026-07-09",
+      "resolved_commit": "f5c05211aff1eeb2c48908ce9f783fecb3d31844",
+      "resolved_date": "2026-07-09"
+    },
+    {
+      "id": "f-0002",
+      "category": "code-quality",
+      "priority": "medium",
+      "risk": "safe",
+      "cluster_id": "c-002",
+      "depends_on": [],
+      "file": "assets/script.js",
+      "line": 39,
+      "description": "No res.ok guard before calling res.json() on the GitHub API fetch. On a 403 rate-limit, GitHub returns a plain object (not an array), causing repos.filter() to throw a TypeError swallowed by .catch() with a generic message.",
+      "status": "fixed",
+      "first_found_commit": "9e409094eccbb86b697e2c8b6d9edf60010bbde2",
+      "first_found_date": "2026-07-09",
+      "resolved_commit": "f5c05211aff1eeb2c48908ce9f783fecb3d31844",
+      "resolved_date": "2026-07-09"
+    },
+    {
+      "id": "f-0003",
+      "category": "code-quality",
+      "priority": "low",
+      "risk": "safe",
+      "cluster_id": "c-003",
+      "depends_on": [],
+      "file": "assets/style.css",
+      "line": 95,
+      "description": "The .card:hover box-shadow hardcodes rgba(14, 165, 233, 0.08) — the light-mode brand color. In dark mode the --brand variable changes to #38bdf8 but the shadow stays the old colour. Add a --brand-glow CSS variable to each theme block.",
+      "status": "fixed",
+      "first_found_commit": "9e409094eccbb86b697e2c8b6d9edf60010bbde2",
+      "first_found_date": "2026-07-09",
+      "resolved_commit": "f5c05211aff1eeb2c48908ce9f783fecb3d31844",
+      "resolved_date": "2026-07-09"
+    }
+  ]
+}
