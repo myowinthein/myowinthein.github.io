@@ -42,6 +42,8 @@ Open `index.html` directly in a browser for local preview. No install, no build 
 - Repos with Pages enabled but no `homepage` set are intentionally skipped — `has_pages` only
   means Pages is enabled, not that a live site exists at the generated URL
 - The API is unauthenticated — rate-limited to 60 req/hr per IP; no auth token is wired up
+- Favicon is hosted externally at `https://myowin.dev/favicon.svg`; no local favicon file exists.
+  To change it, update the file on myowin.dev, not here.
 
 ## Rules
 
@@ -53,4 +55,4 @@ At the start of every session, check whether the paths above exist on this machi
 If either is missing, inform the user: "helm rules are referenced in CLAUDE.md but the
 plugin is not installed on this machine. Install it with: /plugin install claude-helm"
 
-<!-- last-reviewed: 5d27f61547759da9772644a161021ea467436ab8 -->
+<!-- last-reviewed: 71060eb5d403a6d693bff540197f9a116b5065ca -->
