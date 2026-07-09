@@ -37,7 +37,7 @@ function safeUrl(raw, fallback) {
 const grid = document.getElementById('grid');
 
 fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated`)
-  .then(res => res.json())
+  .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
   .then(repos => {
     const paged = repos.filter(r => r.has_pages && !r.fork && r.name !== SELF_REPO && r.homepage);
 
@@ -51,7 +51,7 @@ fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updat
       const desc = escapeHtml(r.description || '');
       const name = escapeHtml(r.name);
       return `
-        <a class="card" href="${url}" target="_blank">
+        <a class="card" href="${url}" target="_blank" rel="noopener noreferrer">
           <div class="card-name">${name}</div>
           <div class="card-desc">${desc}</div>
           <div class="card-link">View site →</div>
