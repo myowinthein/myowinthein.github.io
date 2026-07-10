@@ -11,7 +11,7 @@ fetches the owner's public GitHub repos via the GitHub API and renders them as p
 
 ## Project Config
 
-git-solo: true
+git-strategy: solo
 git-auto-commit: true
 
 ## Dev Commands
