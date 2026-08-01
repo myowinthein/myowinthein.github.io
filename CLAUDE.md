@@ -24,6 +24,20 @@ Open `index.html` directly in a browser for local preview. No install, no build 
 - `assets/style.css` — all styles; theme via CSS custom properties on `[data-theme]` on `<html>`
 - `assets/script.js` — two responsibilities: theme toggle + GitHub API fetch/render
 
+## Domain Rules
+
+- A repo becomes a project card only if all four hold: `has_pages === true`, non-empty `homepage`,
+  not a fork, and not the `myowinthein.github.io` repo itself — this is the site's core "what
+  counts as a project" rule (script.js filter line)
+- Repo-sourced text (`name`, `description`) is untrusted external input and must pass through
+  `escapeHtml` before being placed in the DOM; any new field rendered from the API response must
+  do the same or it reintroduces the XSS this was fixed for (see `74375b3`)
+- Repo-sourced URLs (`homepage`) must pass through `safeUrl`, which only allows `http:`/`https:`
+  protocols and falls back to the repo's own GitHub Pages URL otherwise — do not link `r.homepage`
+  directly
+- Theme resolution order: explicit `localStorage` choice wins if present, otherwise system
+  `prefers-color-scheme` decides; there is no third "auto" state once the user has toggled once
+
 ## Behavior Rules
 
 - No build step exists; do not introduce one unless the user asks
@@ -55,4 +69,4 @@ At the start of every session, check whether the paths above exist on this machi
 If either is missing, inform the user: "helm rules are referenced in CLAUDE.md but the
 plugin is not installed on this machine. Install it with: /plugin install claude-helm"
 
-<!-- last-reviewed: 71060eb5d403a6d693bff540197f9a116b5065ca -->
+<!-- last-reviewed: b961594b75690cd03a936a4d8f5d6dd832fdb455 -->
