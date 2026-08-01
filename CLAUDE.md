@@ -13,6 +13,7 @@ fetches the owner's public GitHub repos via the GitHub API and renders them as p
 
 git-strategy: solo
 git-auto-commit: true
+readme-style: standard
 
 ## Dev Commands
 

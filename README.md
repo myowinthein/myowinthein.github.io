@@ -14,7 +14,7 @@ open index.html   # macOS; use xdg-open on Linux or just double-click
 
 ## Usage
 
-The page fetches the owner's public GitHub repos at runtime and renders cards for any repo that has GitHub Pages enabled and a homepage URL set. No build step, no server needed.
+The page fetches the owner's public GitHub repos at runtime and renders cards for any repo that has GitHub Pages enabled, isn't a fork, and has a homepage URL set. No build step, no server needed.
 
 To deploy changes, push to `main` — GitHub Pages publishes automatically.
 
@@ -22,4 +22,8 @@ To deploy changes, push to `main` — GitHub Pages publishes automatically.
 
 This is a personal site. Issues and PRs are not expected.
 
-<!-- last-reviewed: d6bf820d23bdb33a1d2b37df13ab7d04e0a0b88a -->
+## License
+
+All rights reserved. This code is not licensed for reuse.
+
+<!-- last-reviewed: 840cec32638994328f931c644454b02615d16cde -->
