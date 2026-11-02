@@ -20,8 +20,22 @@
       "reason": "The API fixture always returns 100 items regardless of the request, so a page-size regression could pass tests while dropping real projects; current first/last checks also miss middle-list duplication.",
       "action": "improve",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+      "state": "resolved",
+      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+      "tests": [
+        "test/script.test.cjs::loads every repository once in updated order using API pagination"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::loads every repository once in updated order using API pagination"
+        ],
+        "method": "runtime",
+        "outcome": "All 18 tests passed with zero failures, skips, or todos. The pagination fixture honors request page size, and the complete ordered list of 101 repository names plus card count and request order is asserted.",
+        "commit": "1010faf91446204080e6cd8c076052432b83ebf8",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic GitHub pagination over 101 repositories with a bounded request guard."
+      }
     },
     {
       "id": "g-5810ae5d-48d5-4d98-884a-a18074cb6887",
@@ -39,8 +53,30 @@
       "reason": "The theme toggle is one of the site's two main behaviors, but the current harness discards attributes, storage writes, and click handlers, leaving regressions unobserved.",
       "action": "add",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+      "state": "resolved",
+      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+      "tests": [
+        "test/script.test.cjs::uses the system light theme without a saved choice",
+        "test/script.test.cjs::uses the system dark theme without a saved choice",
+        "test/script.test.cjs::keeps a saved light theme over a dark system preference",
+        "test/script.test.cjs::keeps a saved dark theme over a light system preference",
+        "test/script.test.cjs::persists theme toggles and restores the choice on reload"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::uses the system light theme without a saved choice",
+          "test/script.test.cjs::uses the system dark theme without a saved choice",
+          "test/script.test.cjs::keeps a saved light theme over a dark system preference",
+          "test/script.test.cjs::keeps a saved dark theme over a light system preference",
+          "test/script.test.cjs::persists theme toggles and restores the choice on reload"
+        ],
+        "method": "runtime",
+        "outcome": "All 15 tests passed with zero failures, skips, or todos; assertions cover four theme initialization combinations, both toggle directions, persisted choices, and reload restoration.",
+        "commit": "835c0156b38a23fa715ab0436117580456ab9991",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; browser theme state and local storage use isolated synthetic fixtures."
+      }
     },
     {
       "id": "g-7d5a943a-2c2f-47d5-90a4-beb988a86f44",
@@ -58,8 +94,28 @@
       "reason": "A failure of project loading replaces the core page content; first-page network and parse failures are not currently asserted, and the existing error check does not prove that partial cards are absent.",
       "action": "improve",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+      "state": "resolved",
+      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+      "tests": [
+        "test/script.test.cjs::shows an error when the first API page returns an HTTP error",
+        "test/script.test.cjs::shows an error when the GitHub request rejects",
+        "test/script.test.cjs::shows an error when the GitHub response has invalid JSON",
+        "test/script.test.cjs::shows an error when a later API page fails"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::shows an error when the first API page returns an HTTP error",
+          "test/script.test.cjs::shows an error when the GitHub request rejects",
+          "test/script.test.cjs::shows an error when the GitHub response has invalid JSON",
+          "test/script.test.cjs::shows an error when a later API page fails"
+        ],
+        "method": "runtime",
+        "outcome": "All 18 tests passed with zero failures, skips, or todos. Four failure scenarios assert the complete error HTML so partial project cards cannot remain.",
+        "commit": "1010faf91446204080e6cd8c076052432b83ebf8",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic initial HTTP, rejected fetch, invalid JSON, and later-page failure responses."
+      }
     },
     {
       "id": "g-e500f24b-4f40-4356-a2bd-5648b9dd0642",
