@@ -64,7 +64,7 @@ public GitHub repositories as project cards.
 - A failed API request, including any later page, replaces the entire listing with
   the error state. Requests are unauthenticated and subject to GitHub rate limits.
 - Theme initialization reads the system preference once; it does not listen for later
-  system theme changes. Current tests stub theme APIs rather than asserting theme behavior.
+  system theme changes.
 - The favicon URL is `https://myowin.dev/favicon.svg`; no local favicon file is tracked.
   Edit the hosted asset to change its image, or the HTML link to change its location.
 
