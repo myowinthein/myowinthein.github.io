@@ -37,17 +37,18 @@ function safeUrl(raw, fallback) {
 const grid = document.getElementById('grid');
 
 async function fetchRepos() {
+  const perPage = 100;
   const repos = [];
   let page = 1;
   let batch;
 
   do {
-    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?type=owner&per_page=100&sort=updated&page=${page}`);
+    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?type=owner&per_page=${perPage}&sort=updated&page=${page}`);
     if (!res.ok) throw new Error(res.status);
     batch = await res.json();
     repos.push(...batch);
     page += 1;
-  } while (batch.length === 100);
+  } while (batch.length === perPage);
 
   return repos;
 }
