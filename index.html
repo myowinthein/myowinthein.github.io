@@ -22,8 +22,13 @@
   <p>Open source projects</p>
 </header>
 
-<div class="grid" id="grid">
+<div class="grid" id="grid" aria-busy="true">
   <p class="loading">Loading projects…</p>
+</div>
+
+<div class="project-controls">
+  <p class="loading" id="project-status" role="status"></p>
+  <button class="load-more" id="load-more" type="button" aria-controls="grid" hidden>Load more</button>
 </div>
 
 <footer>

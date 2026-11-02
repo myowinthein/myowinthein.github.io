@@ -35,51 +35,88 @@ function safeUrl(raw, fallback) {
 }
 
 const grid = document.getElementById('grid');
+const loadMore = document.getElementById('load-more');
+const projectStatus = document.getElementById('project-status');
+const PAGE_SIZE = 3;
+const pendingProjects = [];
+const seenProjects = new Set();
+let nextPage = 1;
+let hasMore = true;
+let loading = false;
+let displayedProjects = 0;
 
-async function fetchRepos() {
-  const perPage = 100;
-  const repos = [];
-  let page = 1;
-  let batch;
-
-  do {
-    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?type=owner&per_page=${perPage}&sort=updated&page=${page}`);
+async function fetchNextProjects() {
+  while (pendingProjects.length < PAGE_SIZE && hasMore) {
+    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?type=owner&per_page=${PAGE_SIZE}&sort=updated&page=${nextPage}`);
     if (!res.ok) throw new Error(res.status);
-    batch = await res.json();
-    repos.push(...batch);
-    page += 1;
-  } while (batch.length === perPage);
-
-  return repos;
-}
-
-fetchRepos()
-  .then(repos => {
-    const projects = repos.filter(r =>
+    const batch = await res.json();
+    const projects = batch.filter(r =>
       r.private === false &&
       !r.fork &&
       r.owner?.login?.toLowerCase() === GITHUB_USER &&
       r.name.toLowerCase() !== SELF_REPO
-    );
+    ).filter(r => {
+      const name = r.name.toLowerCase();
+      if (seenProjects.has(name)) return false;
+      seenProjects.add(name);
+      return true;
+    });
+    pendingProjects.push(...projects);
+    nextPage += 1;
+    hasMore = batch.length === PAGE_SIZE;
+  }
 
-    if (projects.length === 0) {
+  return pendingProjects.splice(0, PAGE_SIZE);
+}
+
+function projectCards(projects) {
+  return projects.map(r => {
+    const repoUrl = `https://github.com/${GITHUB_USER}/${encodeURIComponent(r.name)}`;
+    const url  = safeUrl(r.homepage, repoUrl);
+    const desc = escapeHtml(r.description || '');
+    const name = escapeHtml(r.name);
+    return `
+      <a class="card" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+        <div class="card-name">${name}</div>
+        <div class="card-desc">${desc}</div>
+        <div class="card-link">${url === repoUrl ? 'View repository' : 'View site'} →</div>
+      </a>`;
+  }).join('');
+}
+
+async function loadMoreProjects() {
+  if (loading || (!hasMore && pendingProjects.length === 0)) return;
+  loading = true;
+  loadMore.disabled = true;
+  loadMore.textContent = 'Loading…';
+  grid.setAttribute('aria-busy', 'true');
+  projectStatus.textContent = displayedProjects ? 'Loading more projects…' : '';
+
+  try {
+    const projects = await fetchNextProjects();
+    const cards = projectCards(projects);
+    if (displayedProjects === 0) grid.innerHTML = '';
+    grid.insertAdjacentHTML('beforeend', cards);
+    displayedProjects += projects.length;
+    if (displayedProjects === 0) {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
-      return;
     }
+    projectStatus.textContent = displayedProjects && !hasMore && pendingProjects.length === 0
+      ? 'All projects loaded.' : '';
+    loadMore.textContent = 'Load more';
+  } catch {
+    if (displayedProjects === 0) grid.innerHTML = '';
+    projectStatus.textContent = displayedProjects
+      ? 'Could not load more projects. Try again.'
+      : 'Could not load projects. Try again.';
+    loadMore.textContent = 'Try again';
+  } finally {
+    loading = false;
+    loadMore.disabled = false;
+    loadMore.hidden = !hasMore && pendingProjects.length === 0;
+    grid.setAttribute('aria-busy', 'false');
+  }
+}
 
-    grid.innerHTML = projects.map(r => {
-      const repoUrl = `https://github.com/${GITHUB_USER}/${encodeURIComponent(r.name)}`;
-      const url  = safeUrl(r.homepage, repoUrl);
-      const desc = escapeHtml(r.description || '');
-      const name = escapeHtml(r.name);
-      return `
-        <a class="card" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
-          <div class="card-name">${name}</div>
-          <div class="card-desc">${desc}</div>
-          <div class="card-link">${url === repoUrl ? 'View repository' : 'View site'} →</div>
-        </a>`;
-    }).join('');
-  })
-  .catch(() => {
-    grid.innerHTML = '<p class="loading">Could not load projects.</p>';
-  });
+loadMore.addEventListener('click', loadMoreProjects);
+loadMoreProjects();

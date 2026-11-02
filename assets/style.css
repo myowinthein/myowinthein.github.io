@@ -122,6 +122,35 @@ header p {
   font-size: 14px;
 }
 
+.project-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.project-controls p:empty { display: none; }
+
+.load-more {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 20px;
+}
+
+.load-more:hover:not(:disabled), .load-more:focus-visible {
+  border-color: var(--brand);
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.load-more:disabled { cursor: wait; opacity: 0.6; }
+
 footer {
   margin-top: 48px;
   font-size: 12px;

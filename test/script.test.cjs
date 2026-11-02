@@ -9,21 +9,34 @@ const vm = require('node:vm');
 // declarations (escapeHtml, safeUrl, applyTheme) become properties of the
 // sandbox, so we can test the actual shipped code with no source changes
 // and no npm/jsdom dependency.
+function element() {
+  const attributes = new Map();
+  const handlers = new Map();
+  return {
+    innerHTML: '', textContent: '', hidden: false, disabled: false,
+    setAttribute(name, value) { attributes.set(name, value); },
+    getAttribute(name) { return attributes.get(name) ?? null; },
+    addEventListener(type, handler) { handlers.set(type, handler); },
+    click() { if (!this.disabled) return handlers.get('click')?.(); },
+    insertAdjacentHTML(position, html) {
+      assert.equal(position, 'beforeend');
+      this.innerHTML += html;
+    },
+  };
+}
+
 function loadScript(
   fetchImpl = () => Promise.resolve({ ok: false, status: 404 }),
   { savedTheme = null, prefersDark = false, storage = new Map() } = {},
 ) {
   const code = fs.readFileSync(path.join(__dirname, '../assets/script.js'), 'utf8');
   const attributes = new Map();
-  const clickHandlers = new Map();
   if (savedTheme !== null) storage.set('theme', savedTheme);
   const elements = {
-    grid: { innerHTML: '' },
-    'theme-toggle': {
-      addEventListener(type, handler) { clickHandlers.set(type, handler); },
-      click() { clickHandlers.get('click')(); },
-      textContent: '',
-    },
+    grid: element(),
+    'theme-toggle': element(),
+    'load-more': element(),
+    'project-status': element(),
   };
   const sandbox = {
     document: {
@@ -117,8 +130,19 @@ function response(repos) {
   return { ok: true, json: async () => repos };
 }
 
+function paginatedFetch(repositories, requests = []) {
+  return async url => {
+    const request = new URL(url);
+    requests.push(request);
+    if (requests.length > repositories.length + 1) throw new Error('Pagination did not finish');
+    const page = Number(request.searchParams.get('page'));
+    const perPage = Number(request.searchParams.get('per_page'));
+    return response(repositories.slice((page - 1) * perPage, page * perPage));
+  };
+}
+
 test('lists owned public projects without Pages or a homepage, excluding forks and self', async () => {
-  const sandbox = loadScript(async () => response([
+  const sandbox = loadScript(paginatedFetch([
     repo('plain-project'),
     repo('archived-project', { archived: true }),
     repo('private-project', { private: true }),
@@ -135,36 +159,148 @@ test('lists owned public projects without Pages or a homepage, excluding forks a
   assert.match(html, /View repository →/);
 });
 
-test('loads every repository once in updated order using API pagination', async () => {
-  const repositories = Array.from({ length: 101 }, (_, i) => repo(`project-${i}`));
+test('fetches three projects initially and appends more only when requested', async () => {
+  const repositories = Array.from({ length: 7 }, (_, i) => repo(`project-${i}`));
   const requests = [];
-  const sandbox = loadScript(async url => {
-    const request = new URL(url);
-    requests.push(request);
-    if (requests.length > 4) throw new Error('Pagination did not finish');
-    const page = Number(request.searchParams.get('page') ?? 1);
-    const perPage = Math.min(Number(request.searchParams.get('per_page') ?? 30), 100);
-    const start = (page - 1) * perPage;
-    return response(repositories.slice(start, start + perPage));
-  });
+  const sandbox = loadScript(paginatedFetch(repositories, requests));
   await sandbox.ready;
+  const grid = sandbox.document.getElementById('grid');
+  const button = sandbox.document.getElementById('load-more');
+  assert.equal(requests.length, 1);
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 3);
+  assert.doesNotMatch(grid.innerHTML, /project-3/);
+  assert.equal(button.hidden, false);
+
+  await button.click();
   assert.equal(requests.length, 2);
-  assert.deepEqual(requests.map(url => url.searchParams.get('page')), ['1', '2']);
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 6);
+  await button.click();
+  assert.equal(requests.length, 3);
+  assert.deepEqual(requests.map(url => url.searchParams.get('page')), ['1', '2', '3']);
   assert.ok(requests.every(url => url.searchParams.get('sort') === 'updated'));
-  const html = sandbox.document.getElementById('grid').innerHTML;
-  assert.equal((html.match(/class="card"/g) || []).length, 101);
+  assert.ok(requests.every(url => url.searchParams.get('per_page') === '3'));
+  const html = grid.innerHTML;
+  assert.equal((html.match(/class="card"/g) || []).length, 7);
   const renderedNames = Array.from(html.matchAll(/class="card-name">([^<]+)<\/div>/g), match => match[1]);
   assert.deepEqual(renderedNames, repositories.map(r => r.name));
+  assert.equal(button.hidden, true);
+  assert.equal(sandbox.document.getElementById('project-status').textContent, 'All projects loaded.');
+  await button.click();
+  assert.equal(requests.length, 3);
+});
+
+test('fills batches across excluded repositories and retains extra eligible projects', async () => {
+  const requests = [];
+  const sandbox = loadScript(paginatedFetch([
+    repo('fork', { fork: true }), repo('alpha'), repo('myowinthein.github.io'),
+    repo('beta'), repo('gamma'), repo('delta'), repo('epsilon'),
+  ], requests));
+  await sandbox.ready;
+  const grid = sandbox.document.getElementById('grid');
+  assert.equal(requests.length, 2);
+  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+    ['alpha', 'beta', 'gamma']);
+  await sandbox.document.getElementById('load-more').click();
+  assert.equal(requests.length, 3);
+  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+    ['alpha', 'beta', 'gamma', 'delta', 'epsilon']);
+  assert.equal(sandbox.document.getElementById('load-more').hidden, true);
+});
+
+test('keeps displayed cards after a later failure and retries the same API page', async () => {
+  const requests = [];
+  const sandbox = loadScript(async url => {
+    const page = new URL(url).searchParams.get('page');
+    requests.push(page);
+    if (requests.length === 2) return { ok: false, status: 403 };
+    return response(page === '1' ? [repo('alpha'), repo('beta'), repo('gamma')] : [repo('delta')]);
+  });
+  await sandbox.ready;
+  const grid = sandbox.document.getElementById('grid');
+  const initialCards = grid.innerHTML;
+  const button = sandbox.document.getElementById('load-more');
+  await button.click();
+  assert.equal(grid.innerHTML, initialCards);
+  assert.equal(sandbox.document.getElementById('project-status').textContent,
+    'Could not load more projects. Try again.');
+  assert.equal(button.disabled, false);
+  await button.click();
+  assert.deepEqual(requests, ['1', '2', '2']);
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 4);
+  assert.equal(button.hidden, true);
+});
+
+test('retains successful partial results when an initial batch needs a retry', async () => {
+  const requests = [];
+  const sandbox = loadScript(async url => {
+    const page = new URL(url).searchParams.get('page');
+    requests.push(page);
+    if (requests.length === 2) throw new TypeError('Network request failed');
+    if (page === '1') return response([repo('alpha'), repo('fork', { fork: true }), repo('myowinthein.github.io')]);
+    if (page === '2') return response([repo('beta'), repo('gamma'), repo('delta')]);
+    return response([]);
+  });
+  await sandbox.ready;
+  const button = sandbox.document.getElementById('load-more');
+  const grid = sandbox.document.getElementById('grid');
+  assert.equal(grid.innerHTML, '');
+  await button.click();
+  assert.deepEqual(requests, ['1', '2', '2']);
+  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+    ['alpha', 'beta', 'gamma']);
+  await button.click();
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 4);
+  assert.match(grid.innerHTML, /delta/);
+  assert.equal(button.hidden, true);
+});
+
+test('ignores repeated load requests while an API page is in flight', async () => {
+  let finishPage;
+  let requests = 0;
+  const sandbox = loadScript(async () => {
+    requests += 1;
+    if (requests === 1) return response([repo('alpha'), repo('beta'), repo('gamma')]);
+    return new Promise(resolve => { finishPage = resolve; });
+  });
+  await sandbox.ready;
+  const button = sandbox.document.getElementById('load-more');
+  const grid = sandbox.document.getElementById('grid');
+  const pending = button.click();
+  assert.equal(button.disabled, true);
+  assert.equal(grid.getAttribute('aria-busy'), 'true');
+  button.click();
+  await sandbox.loadMoreProjects();
+  assert.equal(requests, 2);
+  finishPage(response([repo('delta')]));
+  await pending;
+  assert.equal(grid.getAttribute('aria-busy'), 'false');
+  assert.equal(button.disabled, false);
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 4);
+});
+
+test('does not repeat cards when repositories move between API pages', async () => {
+  const sandbox = loadScript(async url => {
+    const page = new URL(url).searchParams.get('page');
+    if (page === '1') return response([repo('alpha'), repo('beta'), repo('gamma')]);
+    if (page === '2') return response([repo('gamma'), repo('delta'), repo('epsilon')]);
+    return response([repo('zeta')]);
+  });
+  await sandbox.ready;
+  await sandbox.document.getElementById('load-more').click();
+  const grid = sandbox.document.getElementById('grid');
+  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+    ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']);
 });
 
 test('uses safe homepages and escapes API text and URL attributes', async () => {
-  const sandbox = loadScript(async () => response([
+  const sandbox = loadScript(paginatedFetch([
     repo('website', { homepage: 'https://example.com/?a=1&b=2', description: '<img src=x onerror=alert(1)>' }),
     repo('unsafe', { homepage: 'javascript:alert(1)' }),
     repo('invalid', { homepage: 'not a URL' }),
     repo('<script>'),
   ]));
   await sandbox.ready;
+  await sandbox.document.getElementById('load-more').click();
   const html = sandbox.document.getElementById('grid').innerHTML;
   assert.match(html, /href="https:\/\/example.com\/\?a=1&amp;b=2"/);
   assert.match(html, /View site →/);
@@ -197,20 +333,16 @@ for (const scenario of [
       json: async () => { throw new SyntaxError('Invalid JSON'); },
     }),
   },
-  {
-    name: 'a later API page fails',
-    makeFetch: () => {
-      let requests = 0;
-      return async () => ++requests === 1
-        ? response(Array.from({ length: 100 }, (_, i) => repo(`project-${i}`)))
-        : { ok: false, status: 403 };
-    },
-  },
 ]) {
   test(`shows an error when ${scenario.name}`, async () => {
     const sandbox = loadScript(scenario.makeFetch());
     await sandbox.ready;
-    assert.equal(sandbox.document.getElementById('grid').innerHTML,
-      '<p class="loading">Could not load projects.</p>');
+    assert.equal(sandbox.document.getElementById('grid').innerHTML, '');
+    assert.equal(sandbox.document.getElementById('project-status').textContent,
+      'Could not load projects. Try again.');
+    const button = sandbox.document.getElementById('load-more');
+    assert.equal(button.textContent, 'Try again');
+    assert.equal(button.hidden, false);
+    assert.equal(button.disabled, false);
   });
 }
