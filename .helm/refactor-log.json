@@ -124,8 +124,31 @@
         ],
         "invariant": "Keep repository eligibility, case-insensitive name matching and API order identical in the live and preview paths. A preview must still leave seenProjects and pagination untouched until a live page succeeds, and the rendered cards, status text and retry behavior must not change."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "cc102b543626fcb65da7a5e4bfc9fc5552853aa2",
+        "date": "2026-11-02",
+        "method": "runtime",
+        "evidence": [
+          "assets/script.js now defines newProjects(repos, seen) once; fetchNextProjects calls it with seenProjects and the stale-preview callback calls it with new Set(seenProjects), so eligibility and lowercase-name matching exist in one place.",
+          "All 53 existing component tests passed unchanged with the same names. In scratchpad copies, removing seen.add made the repositories-move test fail and sharing seenProjects with the preview made the failed-later-page preview test fail."
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js",
+            "scope": "Browser script syntax in the project root",
+            "outcome": "Passed with exit status 0."
+          },
+          {
+            "command": "node --test test/script.test.cjs",
+            "scope": "All 53 Node.js VM component tests; synthetic browser state and GitHub responses",
+            "outcome": "53 passed; 0 failed, skipped, cancelled, or todo."
+          }
+        ]
+      }
     },
     {
       "id": "r-052a4dd9-b36c-47e1-b68e-51867907352b",
@@ -152,8 +175,31 @@
         ],
         "invariant": "Every existing test keeps its scenario, inputs and asserted card counts and names. Only the repeated extraction expressions move into helpers, and the test names and count stay the same."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "6e1e19770d06742b027923e681a4dc9a6afc5a4d",
+        "date": "2026-11-02",
+        "method": "runtime",
+        "evidence": [
+          "test/script.test.cjs now defines cardCount(html) and cardNames(html); the 12 card-count and 6 card-name expressions in tests were replaced by calls, leaving only the two markup-shape assertions on class=\"card\" and class=\"card-name\" in the agent-helm copy test.",
+          "The sorted list of 53 passing test names is identical before and after, and all 53 pass. Changing the cardCount pattern in a scratchpad copy made 8 count-based tests fail, so the helper is exercised."
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js",
+            "scope": "Browser script syntax in the project root",
+            "outcome": "Passed with exit status 0."
+          },
+          {
+            "command": "node --test test/script.test.cjs",
+            "scope": "All 53 Node.js VM component tests; synthetic browser state and GitHub responses; test-name list compared with the baseline",
+            "outcome": "53 passed; 0 failed, skipped, cancelled, or todo; names identical to the baseline."
+          }
+        ]
+      }
     },
     {
       "id": "r-980b4de6-679d-4403-974a-eebfa052217c",
@@ -180,8 +226,26 @@
         ],
         "invariant": "The stub elements keep innerHTML, textContent, hidden, disabled, attribute and click behavior, and no test changes its scenarios or assertions."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "6e1e19770d06742b027923e681a4dc9a6afc5a4d",
+        "date": "2026-11-02",
+        "method": "runtime",
+        "evidence": [
+          "The insertAdjacentHTML stub was removed from element() in test/script.test.cjs; no other occurrence existed in the tests, and assets/script.js never calls it.",
+          "All 53 component tests still pass with identical names, so nothing relied on the stub."
+        ],
+        "checks": [
+          {
+            "command": "node --test test/script.test.cjs",
+            "scope": "All 53 Node.js VM component tests; synthetic browser state and GitHub responses",
+            "outcome": "53 passed; 0 failed, skipped, cancelled, or todo."
+          }
+        ]
+      }
     }
   ]
 }
