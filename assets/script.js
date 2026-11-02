@@ -34,6 +34,8 @@ const GITHUB_USER = 'myowinthein';
 const SELF_REPO   = `${GITHUB_USER}.github.io`;
 const USER_API = `https://api.github.com/users/${GITHUB_USER}`;
 const GITHUB_PROFILE = `https://github.com/${GITHUB_USER}`;
+const CACHE_PREFIX = `github-directory:v1:${GITHUB_USER}:`;
+const CACHE_TTL = 5 * 60 * 1000;
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -49,7 +51,43 @@ function safeUrl(raw, fallback) {
 }
 
 function hasNextPage(response) {
-  return /;\s*rel="next"/.test(response.headers.get('Link') || '');
+  return /;\s*rel="next"/.test(response.link);
+}
+
+function isProfileData(data) {
+  return data !== null && typeof data === 'object' && !Array.isArray(data);
+}
+
+function isRepositoryPage(data) {
+  return Array.isArray(data) && data.every(repo => repo &&
+    typeof repo.name === 'string' && typeof repo.private === 'boolean' &&
+    typeof repo.fork === 'boolean' && typeof repo.owner?.login === 'string' &&
+    (repo.description == null || typeof repo.description === 'string'));
+}
+
+async function cachedGitHub(url, validate, onStale = () => {}) {
+  let cached;
+  try {
+    const entry = JSON.parse(localStorage.getItem(CACHE_PREFIX + url));
+    if (entry && Number.isFinite(entry.savedAt) && entry.savedAt >= 0 && entry.savedAt <= Date.now() &&
+        typeof entry.link === 'string' && validate(entry.data)) cached = entry;
+  } catch {
+    // Corrupt or inaccessible storage must not prevent a live request.
+  }
+  if (cached && Date.now() - cached.savedAt < CACHE_TTL) return cached;
+  if (cached) onStale(cached);
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(response.status);
+  const data = await response.json();
+  if (!validate(data)) throw new Error('Invalid GitHub response');
+  const entry = { data, link: response.headers.get('Link') || '', savedAt: Date.now() };
+  try {
+    localStorage.setItem(CACHE_PREFIX + url, JSON.stringify(entry));
+  } catch {
+    // Fresh data remains usable when storage is blocked or full.
+  }
+  return entry;
 }
 
 let profileWebsite = '';
@@ -77,30 +115,31 @@ function renderProfileLinks() {
   }).map(link => `<a href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a>`).join('');
 }
 
+function renderProfile(profile) {
+  const name = typeof profile.name === 'string' && profile.name.trim() ? profile.name : GITHUB_USER;
+  document.getElementById('profile-name').textContent = name;
+  for (const field of ['bio', 'location']) {
+    const element = document.getElementById(`profile-${field}`);
+    const value = typeof profile[field] === 'string' ? profile[field].trim() : '';
+    element.textContent = value;
+    element.hidden = !value;
+  }
+  profileWebsite = typeof profile.blog === 'string' ? safeUrl(profile.blog, '') : '';
+  renderProfileLinks();
+  document.title = `${name} | Public projects`;
+  const description = typeof profile.bio === 'string' && profile.bio.trim()
+    ? profile.bio : `Public GitHub projects by ${name}.`;
+  document.getElementById('page-description').setAttribute('content', description);
+  document.getElementById('page-og-title').setAttribute('content', document.title);
+  document.getElementById('page-og-description').setAttribute('content', description);
+}
+
 async function loadProfile() {
   try {
-    const response = await fetch(USER_API);
-    if (!response.ok) throw new Error(response.status);
-    const profile = await response.json();
-    if (!profile || Array.isArray(profile) || typeof profile !== 'object') throw new Error('Invalid profile');
-    const name = typeof profile.name === 'string' && profile.name.trim() ? profile.name : GITHUB_USER;
-    document.getElementById('profile-name').textContent = name;
-    for (const field of ['bio', 'location']) {
-      const element = document.getElementById(`profile-${field}`);
-      const value = typeof profile[field] === 'string' ? profile[field].trim() : '';
-      element.textContent = value;
-      element.hidden = !value;
-    }
-    profileWebsite = typeof profile.blog === 'string' ? safeUrl(profile.blog, '') : '';
-    renderProfileLinks();
-    document.title = `${name} | Public projects`;
-    const description = typeof profile.bio === 'string' && profile.bio.trim()
-      ? profile.bio : `Public GitHub projects by ${name}.`;
-    document.getElementById('page-description').setAttribute('content', description);
-    document.getElementById('page-og-title').setAttribute('content', document.title);
-    document.getElementById('page-og-description').setAttribute('content', description);
+    const response = await cachedGitHub(USER_API, isProfileData, cached => renderProfile(cached.data));
+    renderProfile(response.data);
   } catch {
-    // Keep the static identity and GitHub link when profile data is unavailable.
+    // Keep cached or static profile content when a refresh fails.
   }
 }
 
@@ -110,16 +149,16 @@ async function loadSocialLinks() {
     let page = 1;
     let more;
     do {
-      const response = await fetch(`${USER_API}/social_accounts?per_page=100&page=${page}`);
-      if (!response.ok) throw new Error(response.status);
-      const batch = await response.json();
-      if (!Array.isArray(batch)) throw new Error('Invalid social accounts');
-      accounts.push(...batch);
+      const response = await cachedGitHub(`${USER_API}/social_accounts?per_page=100&page=${page}`, Array.isArray, cached => {
+        socialAccounts = [...accounts, ...cached.data];
+        renderProfileLinks();
+      });
+      accounts.push(...response.data);
+      socialAccounts = [...accounts];
+      renderProfileLinks();
       more = hasNextPage(response);
       page += 1;
     } while (more);
-    socialAccounts = accounts;
-    renderProfileLinks();
   } catch {
     // Profile and project requests remain independent of optional social links.
   }
@@ -135,20 +174,19 @@ const seenProjects = new Set();
 let nextPage = 1;
 let hasMore = true;
 let loading = false;
-let displayedProjects = 0;
+const displayedProjects = [];
 
-async function fetchNextProjects() {
+function eligibleProjects(repos) {
+  return repos.filter(r =>
+    r.private === false && !r.fork &&
+    r.owner.login.toLowerCase() === GITHUB_USER && r.name.toLowerCase() !== SELF_REPO);
+}
+
+async function fetchNextProjects(onStale) {
   let projects = [];
   do {
-    const res = await fetch(`${USER_API}/repos?type=owner&per_page=${PAGE_SIZE}&sort=updated&page=${nextPage}`);
-    if (!res.ok) throw new Error(res.status);
-    const batch = await res.json();
-    projects = batch.filter(r =>
-      r.private === false &&
-      !r.fork &&
-      r.owner?.login?.toLowerCase() === GITHUB_USER &&
-      r.name.toLowerCase() !== SELF_REPO
-    ).filter(r => {
+    const res = await cachedGitHub(`${USER_API}/repos?type=owner&per_page=${PAGE_SIZE}&sort=updated&page=${nextPage}`, isRepositoryPage, onStale);
+    projects = eligibleProjects(res.data).filter(r => {
       const name = r.name.toLowerCase();
       if (seenProjects.has(name)) return false;
       seenProjects.add(name);
@@ -187,29 +225,45 @@ async function loadMoreProjects() {
   loadMore.disabled = true;
   loadMore.textContent = 'Loading…';
   grid.setAttribute('aria-busy', 'true');
-  if (displayedProjects === 0) grid.innerHTML = '<p class="loading">Loading projects…</p>';
-  projectStatus.textContent = displayedProjects ? 'Loading more projects…' : '';
+  if (displayedProjects.length === 0) grid.innerHTML = '<p class="loading">Loading projects…</p>';
+  projectStatus.textContent = displayedProjects.length ? 'Loading more projects…' : '';
+  let previewProjects = [];
 
   try {
-    const projects = await fetchNextProjects();
-    const cards = projectCards(projects);
-    if (displayedProjects === 0) grid.innerHTML = '';
-    grid.insertAdjacentHTML('beforeend', cards);
-    displayedProjects += projects.length;
-    if (displayedProjects === 0) {
+    const projects = await fetchNextProjects(cached => {
+      const seen = new Set(seenProjects);
+      previewProjects = eligibleProjects(cached.data).filter(project => {
+        const name = project.name.toLowerCase();
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      });
+      if (previewProjects.length) {
+        grid.innerHTML = projectCards([...displayedProjects, ...previewProjects]);
+        projectStatus.textContent = 'Showing cached projects…';
+      }
+    });
+    displayedProjects.push(...projects);
+    grid.innerHTML = projectCards(displayedProjects);
+    const count = displayedProjects.length;
+    if (count === 0) {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
     }
-    projectStatus.textContent = displayedProjects
+    projectStatus.textContent = count
       ? hasMore
-        ? `Showing ${displayedProjects} ${displayedProjects === 1 ? 'project' : 'projects'}.`
-        : `All ${displayedProjects} ${displayedProjects === 1 ? 'project' : 'projects'} loaded.`
+        ? `Showing ${count} ${count === 1 ? 'project' : 'projects'}.`
+        : `All ${count} ${count === 1 ? 'project' : 'projects'} loaded.`
       : '';
     loadMore.textContent = 'Load more';
   } catch {
-    if (displayedProjects === 0) grid.innerHTML = fallbackProjects;
-    projectStatus.textContent = displayedProjects
-      ? 'Could not load more projects. Try again.'
-      : 'Could not load projects. Try again.';
+    if (previewProjects.length) {
+      projectStatus.textContent = 'Showing cached projects. Could not refresh. Try again.';
+    } else {
+      grid.innerHTML = displayedProjects.length ? projectCards(displayedProjects) : fallbackProjects;
+      projectStatus.textContent = displayedProjects.length
+        ? 'Could not load more projects. Try again.'
+        : 'Could not load projects. Try again.';
+    }
     loadMore.textContent = 'Try again';
   } finally {
     loading = false;

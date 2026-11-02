@@ -12,16 +12,18 @@ For privacy questions or requests, email
 ## Visiting the site
 
 You can browse the listing without creating an account or submitting a form.
-The page displays public repository information from my GitHub account.
+The page displays public profile information, social links, and repository
+information from my GitHub account.
 
 Loading the page involves requests to these services:
 
 - **GitHub Pages:** GitHub hosts the site. GitHub states that it logs and stores
   visitors' IP addresses for security purposes, whether or not they are signed in.
   See [GitHub Pages data collection](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages#data-collection).
-- **GitHub API:** Your browser requests public repository information directly
-  from `api.github.com`. GitHub receives the request and associated technical
-  information, such as your IP address and browser request information. The site
+- **GitHub API:** Your browser requests public profile, social-account, and
+  repository information directly from `api.github.com`. GitHub receives the
+  request and associated technical information, such as your IP address and
+  browser request information. The site
   does not ask you to sign into GitHub or supply an API token.
 - **Favicon hosting:** Your browser can request the site icon from
   `https://myowin.dev/favicon.svg`. This file belongs to my separate portfolio,
@@ -51,6 +53,22 @@ the favicon host.
 
 This browser preference is separate from request records kept by hosting
 providers. Clearing it does not delete their records.
+
+## Public GitHub data cache
+
+The site stores copies of my public GitHub profile, social links, and repository
+pages in your browser's local storage. This cache contains public GitHub data,
+not information you submit through this site.
+
+For five minutes after a successful request, the site can reuse that response
+without another API request. Once it is older, cached content can remain visible
+while the site requests an update. If the request fails, the cached content may
+remain visible.
+
+The five-minute period does not delete the stored copy. Cached copies remain
+until replaced or removed when you clear this site's local storage or site data
+in your browser. If browser storage is unavailable, the site attempts to load
+data directly from GitHub.
 
 ## Email correspondence
 
