@@ -135,13 +135,17 @@ test('lists owned public projects without Pages or a homepage, excluding forks a
   assert.match(html, /View repository →/);
 });
 
-test('loads projects beyond the first 100 repos and preserves updated order', async () => {
+test('loads every repository once in updated order using API pagination', async () => {
+  const repositories = Array.from({ length: 101 }, (_, i) => repo(`project-${i}`));
   const requests = [];
   const sandbox = loadScript(async url => {
-    requests.push(new URL(url));
-    return response(requests.length === 1
-      ? Array.from({ length: 100 }, (_, i) => repo(`project-${i}`))
-      : [repo('last-project')]);
+    const request = new URL(url);
+    requests.push(request);
+    if (requests.length > 4) throw new Error('Pagination did not finish');
+    const page = Number(request.searchParams.get('page') ?? 1);
+    const perPage = Math.min(Number(request.searchParams.get('per_page') ?? 30), 100);
+    const start = (page - 1) * perPage;
+    return response(repositories.slice(start, start + perPage));
   });
   await sandbox.ready;
   assert.equal(requests.length, 2);
@@ -149,7 +153,8 @@ test('loads projects beyond the first 100 repos and preserves updated order', as
   assert.ok(requests.every(url => url.searchParams.get('sort') === 'updated'));
   const html = sandbox.document.getElementById('grid').innerHTML;
   assert.equal((html.match(/class="card"/g) || []).length, 101);
-  assert.ok(html.indexOf('project-0') < html.indexOf('last-project'));
+  const renderedNames = Array.from(html.matchAll(/class="card-name">([^<]+)<\/div>/g), match => match[1]);
+  assert.deepEqual(renderedNames, repositories.map(r => r.name));
 });
 
 test('uses safe homepages and escapes API text and URL attributes', async () => {
@@ -176,11 +181,36 @@ test('shows an empty state when no repos qualify', async () => {
   assert.match(sandbox.document.getElementById('grid').innerHTML, /No projects found/);
 });
 
-test('shows an error if a later page fails', async () => {
-  let requests = 0;
-  const sandbox = loadScript(async () => ++requests === 1
-    ? response(Array.from({ length: 100 }, (_, i) => repo(`project-${i}`)))
-    : { ok: false, status: 403 });
-  await sandbox.ready;
-  assert.match(sandbox.document.getElementById('grid').innerHTML, /Could not load projects/);
-});
+for (const scenario of [
+  {
+    name: 'the first API page returns an HTTP error',
+    makeFetch: () => async () => ({ ok: false, status: 403 }),
+  },
+  {
+    name: 'the GitHub request rejects',
+    makeFetch: () => async () => { throw new TypeError('Network request failed'); },
+  },
+  {
+    name: 'the GitHub response has invalid JSON',
+    makeFetch: () => async () => ({
+      ok: true,
+      json: async () => { throw new SyntaxError('Invalid JSON'); },
+    }),
+  },
+  {
+    name: 'a later API page fails',
+    makeFetch: () => {
+      let requests = 0;
+      return async () => ++requests === 1
+        ? response(Array.from({ length: 100 }, (_, i) => repo(`project-${i}`)))
+        : { ok: false, status: 403 };
+    },
+  },
+]) {
+  test(`shows an error when ${scenario.name}`, async () => {
+    const sandbox = loadScript(scenario.makeFetch());
+    await sandbox.ready;
+    assert.equal(sandbox.document.getElementById('grid').innerHTML,
+      '<p class="loading">Could not load projects.</p>');
+  });
+}
