@@ -27,7 +27,11 @@ function element() {
 
 function loadScript(
   fetchImpl = () => Promise.resolve({ ok: false, status: 404 }),
-  { savedTheme = null, prefersDark = false, storage = new Map(), storageApi } = {},
+  {
+    savedTheme = null, prefersDark = false, storage = new Map(), storageApi,
+    profileFetch = async () => ({ ok: false, status: 404 }),
+    socialFetch = async () => ({ ok: false, status: 404 }),
+  } = {},
 ) {
   const code = fs.readFileSync(path.join(__dirname, '../assets/script.js'), 'utf8');
   const attributes = new Map();
@@ -37,10 +41,22 @@ function loadScript(
     'theme-toggle': element(),
     'load-more': element(),
     'project-status': element(),
+    'profile-name': element(),
+    'profile-bio': element(),
+    'profile-location': element(),
+    'profile-links': element(),
+    'page-description': element(),
+    'page-og-title': element(),
+    'page-og-description': element(),
   };
+  elements['profile-name'].textContent = 'myowinthein';
+  elements['profile-bio'].hidden = true;
+  elements['profile-location'].hidden = true;
+  elements['profile-links'].innerHTML = '<a href="https://github.com/myowinthein">GitHub</a>';
   elements.grid.innerHTML = '<p><a href="https://github.com/myowinthein?tab=repositories">Browse public repositories</a></p>';
   const sandbox = {
     document: {
+      title: 'myowinthein | Public projects',
       documentElement: {
         setAttribute(name, value) { attributes.set(name, value); },
         getAttribute(name) { return attributes.get(name) ?? null; },
@@ -52,7 +68,12 @@ function loadScript(
       getItem(key) { return storage.get(key) ?? null; },
       setItem(key, value) { storage.set(key, value); },
     },
-    fetch: fetchImpl,
+    fetch(url) {
+      const pathname = new URL(url).pathname;
+      if (pathname.endsWith('/social_accounts')) return socialFetch(url);
+      if (pathname.endsWith('/repos')) return fetchImpl(url);
+      return profileFetch(url);
+    },
     URL,
   };
   vm.createContext(sandbox);
@@ -177,6 +198,157 @@ function paginatedFetch(repositories, requests = []) {
     return response(repositories.slice((page - 1) * perPage, page * perPage), page * perPage < repositories.length);
   };
 }
+
+test('loads the introduction, metadata, website, and social links from public GitHub data', async () => {
+  const urls = [];
+  const sandbox = loadScript(paginatedFetch([repo('live-project')]), {
+    profileFetch: async url => {
+      urls.push(url);
+      return response({ name: 'Current GitHub Name', bio: 'Current GitHub bio.', location: 'Current location', blog: 'https://example.com/' });
+    },
+    socialFetch: async url => {
+      urls.push(url);
+      return response([
+        { provider: 'linkedin', url: 'https://www.linkedin.com/in/example/' },
+        { provider: 'generic', url: 'https://example.medium.com/' },
+      ]);
+    },
+  });
+  await sandbox.ready;
+  const get = id => sandbox.document.getElementById(id);
+  assert.equal(get('profile-name').textContent, 'Current GitHub Name');
+  assert.equal(get('profile-bio').textContent, 'Current GitHub bio.');
+  assert.equal(get('profile-location').textContent, 'Current location');
+  assert.equal(get('profile-bio').hidden, false);
+  assert.equal(get('profile-location').hidden, false);
+  assert.equal(sandbox.document.title, 'Current GitHub Name | Public projects');
+  assert.equal(get('page-description').getAttribute('content'), 'Current GitHub bio.');
+  assert.equal(get('page-og-title').getAttribute('content'), sandbox.document.title);
+  assert.equal(get('page-og-description').getAttribute('content'), 'Current GitHub bio.');
+  const links = get('profile-links').innerHTML;
+  assert.match(links, /href="https:\/\/example.com\/">Website/);
+  assert.match(links, /href="https:\/\/github.com\/myowinthein">GitHub/);
+  assert.match(links, /href="https:\/\/www.linkedin.com\/in\/example\/">LinkedIn/);
+  assert.match(links, /href="https:\/\/example.medium.com\/">Medium/);
+  assert.ok(urls.includes('https://api.github.com/users/myowinthein'));
+  assert.ok(urls.includes('https://api.github.com/users/myowinthein/social_accounts?per_page=100&page=1'));
+});
+
+test('treats profile text as plain text and validates and escapes social URLs and labels', async () => {
+  const name = '<img src=x onerror=alert(1)>';
+  const bio = '<script>alert(1)</script>';
+  const sandbox = loadScript(undefined, {
+    profileFetch: async () => response({ name, bio, blog: 'javascript:alert(1)' }),
+    socialFetch: async () => response([
+      { provider: 'generic', url: 'data:text/html,unsafe' },
+      { provider: '<img src=x>', url: 'https://example.com/?a=1&b=2' },
+      { provider: 'generic', url: 'not a URL' },
+      null,
+    ]),
+  });
+  await sandbox.ready;
+  const get = id => sandbox.document.getElementById(id);
+  assert.equal(get('profile-name').textContent, name);
+  assert.equal(get('profile-bio').textContent, bio);
+  assert.equal(get('profile-name').innerHTML, '');
+  assert.equal(get('profile-bio').innerHTML, '');
+  const links = get('profile-links').innerHTML;
+  assert.match(links, /href="https:\/\/example.com\/\?a=1&amp;b=2"/);
+  assert.match(links, /&lt;img src=x&gt;/);
+  assert.doesNotMatch(links, /javascript:|data:|<img|Website/);
+});
+
+test('hides missing profile fields and avoids duplicate website and social links', async () => {
+  const sandbox = loadScript(undefined, {
+    profileFetch: async () => response({ name: null, bio: null, location: ' ', blog: 'https://example.com' }),
+    socialFetch: async () => response([
+      { provider: 'generic', url: 'https://example.com/' },
+      { provider: 'generic', url: 'https://github.com/myowinthein' },
+      { provider: 'generic', url: 'https://example.com/' },
+    ]),
+  });
+  await sandbox.ready;
+  const get = id => sandbox.document.getElementById(id);
+  assert.equal(get('profile-name').textContent, 'myowinthein');
+  assert.equal(get('profile-bio').hidden, true);
+  assert.equal(get('profile-location').hidden, true);
+  assert.equal((get('profile-links').innerHTML.match(/<a /g) || []).length, 2);
+  assert.equal(get('page-description').getAttribute('content'), 'Public GitHub projects by myowinthein.');
+});
+
+test('keeps project and social loading independent of a failed profile request', async () => {
+  const sandbox = loadScript(paginatedFetch([repo('working-project')]), {
+    profileFetch: async () => { throw new TypeError('Profile unavailable'); },
+    socialFetch: async () => response([{ provider: 'generic', url: 'https://example.medium.com/' }]),
+  });
+  await sandbox.ready;
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'myowinthein');
+  assert.match(sandbox.document.getElementById('profile-links').innerHTML, /Medium/);
+  assert.match(sandbox.document.getElementById('grid').innerHTML, /working-project/);
+});
+
+test('keeps profile loading independent of failed project and social requests', async () => {
+  const sandbox = loadScript(undefined, {
+    profileFetch: async () => response({ name: 'Updated name', blog: 'https://example.com/' }),
+    socialFetch: async () => ({ ok: false, status: 403 }),
+  });
+  await sandbox.ready;
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Updated name');
+  assert.match(sandbox.document.getElementById('profile-links').innerHTML, /Website/);
+  assert.match(sandbox.document.getElementById('grid').innerHTML, /Browse public repositories/);
+});
+
+for (const first of ['profile', 'social']) {
+  test(`retains all profile links when ${first} data arrives first`, async () => {
+    let finishProfile, finishSocial;
+    const sandbox = loadScript(paginatedFetch([repo('independent-project')]), {
+      profileFetch: () => new Promise(resolve => { finishProfile = resolve; }),
+      socialFetch: () => new Promise(resolve => { finishSocial = resolve; }),
+    });
+    const profile = response({ name: 'Current name', blog: 'https://example.com/' });
+    const socials = response([{ provider: 'generic', url: 'https://example.medium.com/' }]);
+    if (first === 'profile') finishProfile(profile);
+    else finishSocial(socials);
+    await new Promise(resolve => setImmediate(resolve));
+    const links = sandbox.document.getElementById('profile-links');
+    assert.match(links.innerHTML, first === 'profile' ? /Website/ : /Medium/);
+    assert.match(sandbox.document.getElementById('grid').innerHTML, /independent-project/);
+    if (first === 'profile') finishSocial(socials);
+    else finishProfile(profile);
+    await sandbox.ready;
+    assert.match(links.innerHTML, /Website/);
+    assert.match(links.innerHTML, /Medium/);
+    assert.match(links.innerHTML, /GitHub/);
+  });
+}
+
+test('follows social-account pagination without dropping earlier links', async () => {
+  const pages = [];
+  const sandbox = loadScript(undefined, {
+    socialFetch: async url => {
+      const request = new URL(url);
+      pages.push(request.searchParams.get('page'));
+      assert.equal(request.searchParams.get('per_page'), '100');
+      return response([{ provider: 'generic', url: `https://example.com/${pages.length}` }], pages.length === 1);
+    },
+  });
+  await sandbox.ready;
+  assert.deepEqual(pages, ['1', '2']);
+  const links = sandbox.document.getElementById('profile-links').innerHTML;
+  assert.match(links, /https:\/\/example.com\/1/);
+  assert.match(links, /https:\/\/example.com\/2/);
+});
+
+test('retains safe fallbacks when profile and social endpoints return invalid data', async () => {
+  const sandbox = loadScript(paginatedFetch([repo('working-project')]), {
+    profileFetch: async () => response(null),
+    socialFetch: async () => response({ unexpected: 'object' }),
+  });
+  await sandbox.ready;
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'myowinthein');
+  assert.match(sandbox.document.getElementById('profile-links').innerHTML, /GitHub/);
+  assert.match(sandbox.document.getElementById('grid').innerHTML, /working-project/);
+});
 
 test('lists owned public projects without Pages or a homepage, excluding forks and self', async () => {
   const sandbox = loadScript(paginatedFetch([
@@ -375,18 +547,18 @@ test('uses safe homepages and escapes API text and URL attributes', async () => 
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/website"/);
 });
 
-test('uses concise project copy while retaining project-page and source destinations', async () => {
+test('uses current GitHub copy for every project without maintained overrides', async () => {
   const sandbox = loadScript(paginatedFetch([
-    repo('agent-helm', { homepage: 'https://myowinthein.github.io/agent-helm/', description: 'A long API description.' }),
+    repo('agent-helm', { homepage: 'https://myowinthein.github.io/agent-helm/', description: 'Updated description from GitHub.' }),
     repo('new-project', { description: 'Description from GitHub.' }),
     repo('toString', { description: 'A valid repository name.' }),
   ]));
   await sandbox.ready;
   const html = sandbox.document.getElementById('grid').innerHTML;
   assert.match(html, /<article class="card">/);
-  assert.match(html, /<h3 class="card-name">Agent Helm<\/h3>/);
-  assert.match(html, /Reusable development workflows for Claude and Codex\./);
-  assert.doesNotMatch(html, /A long API description/);
+  assert.match(html, /<h3 class="card-name">agent-helm<\/h3>/);
+  assert.match(html, /Updated description from GitHub\./);
+  assert.doesNotMatch(html, /Reusable development workflows for Claude and Codex\./);
   assert.match(html, /href="https:\/\/myowinthein.github.io\/agent-helm\/"/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/agent-helm"/);
   assert.match(html, /Description from GitHub\./);

@@ -1,7 +1,7 @@
 # myowinthein.github.io
 
-Personal landing page for Myo Win Thein (Martin), Senior Full-Stack Engineer.
-Introduces the owner, links to the full portfolio, and showcases public GitHub projects.
+Personal project directory for the GitHub account `myowinthein`. The local files
+provide the layout; GitHub supplies the profile, links, and public project data.
 
 [Visit the site](https://myowinthein.github.io).
 
@@ -29,6 +29,26 @@ open index.html
 On other systems, open the file from your file manager. An internet connection is
 required to fetch projects from GitHub.
 
+The introduction loads the account's name, bio, location, and website from
+`https://api.github.com/users/myowinthein`. Social links load independently from
+`https://api.github.com/users/myowinthein/social_accounts`. Empty optional fields
+are hidden, unsafe URLs are skipped, and duplicate links are removed.
+
+To update the site's content, edit GitHub rather than this repository:
+
+| Content | Where to update it |
+| --- | --- |
+| Name, bio, location, website | Your GitHub profile |
+| Social links | Social accounts on your GitHub profile |
+| Project name, description, project-page URL | Each repository's name and About settings |
+| Listed projects | Create or publish a repository that meets the rules below |
+
+Updates are fetched on the next page load; no site commit or redeployment is needed.
+Profile, social-account, and repository requests run independently, so a failed
+endpoint does not block the others. Generic static text and a GitHub link remain
+available if profile data cannot load. Browser title/description metadata updates
+from the profile too; crawlers that do not run JavaScript see the generic metadata.
+
 The page requests 6 repositories initially, sorted by most recently updated, and
 shows the eligible projects. Select **Load more** to request the next API page and
 append up to 6 more cards. A batch can be shorter after filtering; only fully
@@ -42,9 +62,9 @@ A repository appears only when it is:
 
 GitHub Pages and a website URL are optional. Archived repositories can appear.
 Every card has a **Source** link to GitHub and, when a valid HTTP(S) homepage exists,
-a separate **Project page** link. Known projects use short display names and
-descriptions in `PROJECT_DETAILS` in `assets/script.js`; new projects use their
-GitHub names and descriptions automatically.
+a separate **Project page** link. Every project uses its current GitHub name and
+description; there are no maintained project lists or custom copy overrides.
+Use complete HTTP(S) URLs in GitHub's website/homepage fields.
 
 Use the theme button to switch between light and dark. The initial theme follows
 the system preference unless a previous choice is saved in the browser.
@@ -81,8 +101,8 @@ open `http://localhost:8000`.
 
 For a browser check, review both themes at a narrow width such as 360px, use Tab
 and Shift+Tab to check focus, activate buttons with Enter or Space, and confirm
-Load more announces its result. With JavaScript disabled, the static introduction,
-portfolio link, and GitHub repository link should remain usable.
+Load more announces its result. With JavaScript disabled, the generic account
+heading and GitHub repository link should remain usable.
 
 ## Deployment
 

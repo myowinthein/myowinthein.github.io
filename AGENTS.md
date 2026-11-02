@@ -25,12 +25,13 @@ public GitHub repositories as project cards.
 
 ## Architecture Pointers
 
-- `index.html`: static introduction, profile links, accessible page shell, and project fallback.
-- `assets/script.js`: theme initialization/toggle and on-demand GitHub fetch/filter/render.
+- `index.html`: generic account fallback, profile placeholders, accessible shell, and project fallback.
+- `assets/script.js`: theme initialization/toggle, public profile/social loading, and
+  on-demand GitHub repository fetch/filter/render.
 - `assets/style.css`: responsive cards and theme variables; dark overrides use
   `[data-theme="dark"]` on `<html>`.
 - `test/script.test.cjs`: runs the shipped script in a VM; covers filtering, pagination,
-  storage failures, link fallback, escaping, and empty/error states.
+  storage failures, independent profile/social loading, link safety, and empty/error states.
 - `.github/workflows/checks.yml`: dependency-free syntax/tests on pushes and pull requests,
   using Node.js 24. This reports results without gating the legacy Pages deployment.
 
@@ -44,8 +45,12 @@ public GitHub repositories as project cards.
   Use the GitHub Link header's next relation to detect more pages, not batch length.
 - Every card has a Source link to its encoded GitHub repository URL; add a separate
   Project page link only for a valid HTTP(S) homepage. Never generate a Pages URL.
-- `PROJECT_DETAILS` contains short labels/descriptions for known projects; new repos
-  fall back to API names/descriptions. All rendered values must still be escaped.
+- GitHub is the content source: profile name/bio/location/website and social accounts
+  populate the header; repository names/descriptions/homepages populate cards.
+  Do not add curated project lists, copy overrides, or duplicate profile details.
+- Profile, social-account, and repository requests run independently. Keep generic
+  static fallbacks; hide empty optional fields and deduplicate validated links.
+  Refresh data on page load without requiring a site commit or deployment.
 - Theme initialization uses the saved `localStorage.theme` choice when present,
   otherwise the system preference. Ignore invalid stored values and tolerate denied
   storage reads/writes so project loading and visible theme changes still work.
@@ -60,9 +65,10 @@ public GitHub repositories as project cards.
 
 - Never commit secrets; the GitHub API call is unauthenticated and must stay that way.
 - Do not add inline `<script>` or `<style>` blocks; keep JS and CSS in `assets/`.
-- Treat API-sourced text and URLs as untrusted: use `escapeHtml` for text and URL
-  attributes, validate homepage URLs with `safeUrl`, and use the encoded repository
-  URL as the fallback. Never interpolate raw API values into HTML.
+- Treat API-sourced text and URLs as untrusted: use `textContent` for plain text or
+  `escapeHtml` when interpolating HTML text/attributes. Validate external URLs with
+  `safeUrl`; skip invalid profile/social URLs and use the encoded repository URL
+  for project fallbacks. Never interpolate raw API values into HTML.
 
 ## Known Traps
 
@@ -72,6 +78,8 @@ public GitHub repositories as project cards.
   retries the failed page. Requests are unauthenticated and subject to GitHub rate limits.
 - The privacy footer uses the published absolute URL so it works in the plain local
   preview as well as Pages; the local Python server does not render Markdown routes.
+- Profile/social requests are also unauthenticated and share the GitHub API rate
+  limit. Generic static metadata is intentional for crawlers that do not execute JS.
 - Theme initialization reads the system preference once; it does not listen for later
   system theme changes.
 - The favicon URL is `https://myowin.dev/favicon.svg`; no local favicon file is tracked.
