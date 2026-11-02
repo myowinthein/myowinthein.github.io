@@ -23,10 +23,6 @@ function element() {
     getAttribute(name) { return attributes.get(name) ?? null; },
     addEventListener(type, handler) { handlers.set(type, handler); },
     click() { if (!this.disabled) return handlers.get('click')?.(); },
-    insertAdjacentHTML(position, html) {
-      assert.equal(position, 'beforeend');
-      this.innerHTML += html;
-    },
   };
 }
 
@@ -177,7 +173,7 @@ test('retains expired data after API errors and retries the failed project page 
   assert.deepEqual(pages, ['1', '1']);
   assert.match(get('grid').innerHTML, /recovered-project/);
   assert.doesNotMatch(get('grid').innerHTML, /cached-project/);
-  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 1);
+  assert.equal(cardCount(get('grid').innerHTML), 1);
   assert.equal(get('load-more').hidden, true);
 });
 
@@ -194,11 +190,11 @@ test('preserves pagination when repository pages are served from cache', async (
   });
   await secondVisit.ready;
   const get = id => secondVisit.document.getElementById(id);
-  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 6);
+  assert.equal(cardCount(get('grid').innerHTML), 6);
   assert.equal(get('load-more').hidden, false);
   await get('load-more').click();
   await get('load-more').click();
-  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 13);
+  assert.equal(cardCount(get('grid').innerHTML), 13);
   assert.equal(get('load-more').hidden, true);
   assert.equal(requests, 0);
 });
@@ -319,12 +315,12 @@ test('replaces a failed cached later-page preview while preserving earlier cards
   await nextVisit.ready;
   const get = id => nextVisit.document.getElementById(id);
   await get('load-more').click();
-  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 12);
+  assert.equal(cardCount(get('grid').innerHTML), 12);
   assert.match(get('project-status').textContent, /Showing cached projects/);
   recover = true;
   await get('load-more').click();
   assert.deepEqual(pages, ['1', '2', '2']);
-  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 8);
+  assert.equal(cardCount(get('grid').innerHTML), 8);
   assert.match(get('grid').innerHTML, /cached-0/);
   assert.match(get('grid').innerHTML, /updated-6/);
   assert.doesNotMatch(get('grid').innerHTML, />cached-6</);
@@ -424,6 +420,14 @@ function repo(name, overrides = {}) {
     name, private: false, fork: false, owner: { login: 'myowinthein' },
     has_pages: false, homepage: null, description: '', ...overrides,
   };
+}
+
+function cardCount(html) {
+  return (html.match(/class="card"/g) || []).length;
+}
+
+function cardNames(html) {
+  return Array.from(html.matchAll(/class="card-name">([^<]+)</g), m => m[1]);
 }
 
 function response(repos, hasNextPage = false) {
@@ -637,13 +641,13 @@ test('fetches six projects initially and appends more only when requested', asyn
   const grid = sandbox.document.getElementById('grid');
   const button = sandbox.document.getElementById('load-more');
   assert.equal(requests.length, 1);
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 6);
+  assert.equal(cardCount(grid.innerHTML), 6);
   assert.doesNotMatch(grid.innerHTML, /project-6/);
   assert.equal(button.hidden, false);
 
   await button.click();
   assert.equal(requests.length, 2);
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 12);
+  assert.equal(cardCount(grid.innerHTML), 12);
   assert.equal(sandbox.document.getElementById('project-status').textContent, 'Showing 12 projects.');
   await button.click();
   assert.equal(requests.length, 3);
@@ -651,8 +655,8 @@ test('fetches six projects initially and appends more only when requested', asyn
   assert.ok(requests.every(url => url.searchParams.get('sort') === 'updated'));
   assert.ok(requests.every(url => url.searchParams.get('per_page') === '6'));
   const html = grid.innerHTML;
-  assert.equal((html.match(/class="card"/g) || []).length, 13);
-  const renderedNames = Array.from(html.matchAll(/class="card-name">([^<]+)<\/h3>/g), match => match[1]);
+  assert.equal(cardCount(html), 13);
+  const renderedNames = cardNames(html);
   assert.deepEqual(renderedNames, repositories.map(r => r.name));
   assert.equal(button.hidden, true);
   assert.equal(sandbox.document.getElementById('project-status').textContent, 'All 13 projects loaded.');
@@ -669,11 +673,11 @@ test('leaves later API pages for a click when filtering makes the first batch sh
   await sandbox.ready;
   const grid = sandbox.document.getElementById('grid');
   assert.equal(requests.length, 1);
-  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+  assert.deepEqual(cardNames(grid.innerHTML),
     ['alpha', 'beta', 'gamma', 'delta']);
   await sandbox.document.getElementById('load-more').click();
   assert.equal(requests.length, 2);
-  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+  assert.deepEqual(cardNames(grid.innerHTML),
     ['alpha', 'beta', 'gamma', 'delta', 'epsilon']);
   assert.equal(sandbox.document.getElementById('load-more').hidden, true);
 });
@@ -685,7 +689,7 @@ test('shows all five eligible projects in one request when six repos include sel
   ], requests));
   await sandbox.ready;
   assert.equal(requests.length, 1);
-  assert.equal((sandbox.document.getElementById('grid').innerHTML.match(/class="card"/g) || []).length, 5);
+  assert.equal(cardCount(sandbox.document.getElementById('grid').innerHTML), 5);
   assert.equal(sandbox.document.getElementById('load-more').hidden, true);
   await sandbox.document.getElementById('load-more').click();
   assert.equal(requests.length, 1);
@@ -723,7 +727,7 @@ test('keeps displayed cards after a later failure and retries the same API page'
   assert.equal(button.disabled, false);
   await button.click();
   assert.deepEqual(requests, ['1', '2', '2']);
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 4);
+  assert.equal(cardCount(grid.innerHTML), 4);
   assert.equal(button.hidden, true);
 });
 
@@ -743,9 +747,9 @@ test('skips fully excluded pages and retries a failed next page without starting
   assert.match(grid.innerHTML, /Browse public repositories/);
   await button.click();
   assert.deepEqual(requests, ['1', '2', '2']);
-  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+  assert.deepEqual(cardNames(grid.innerHTML),
     ['beta', 'gamma', 'delta']);
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 3);
+  assert.equal(cardCount(grid.innerHTML), 3);
   assert.equal(button.hidden, true);
 });
 
@@ -770,7 +774,7 @@ test('ignores repeated load requests while an API page is in flight', async () =
   await pending;
   assert.equal(grid.getAttribute('aria-busy'), 'false');
   assert.equal(button.disabled, false);
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 4);
+  assert.equal(cardCount(grid.innerHTML), 4);
 });
 
 test('does not repeat cards when repositories move between API pages', async () => {
@@ -784,7 +788,7 @@ test('does not repeat cards when repositories move between API pages', async () 
   await sandbox.document.getElementById('load-more').click();
   await sandbox.document.getElementById('load-more').click();
   const grid = sandbox.document.getElementById('grid');
-  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+  assert.deepEqual(cardNames(grid.innerHTML),
     ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']);
 });
 
