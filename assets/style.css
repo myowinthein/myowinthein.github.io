@@ -55,7 +55,7 @@ header p {
 
 header .role { color: var(--text); margin-top: 12px; }
 
-a { color: var(--brand); text-underline-offset: 3px; }
+a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
 
 a:focus-visible, button:focus-visible {
   outline: 2px solid var(--brand);
@@ -72,11 +72,6 @@ a:focus-visible, button:focus-visible {
 }
 
 .profile-links a { max-width: 100%; }
-
-.profile-links a, .card-links a { text-decoration: none; }
-
-.profile-links a:hover, .profile-links a:focus-visible,
-.card-links a:hover, .card-links a:focus-visible { text-decoration: underline; }
 
 main { width: 100%; max-width: 860px; }
 
@@ -135,7 +130,6 @@ main { width: 100%; max-width: 860px; }
 .card:hover {
   border-color: var(--brand);
   box-shadow: 0 2px 12px var(--brand-glow);
-  text-decoration: none;
 }
 
 .card-name {
@@ -202,7 +196,7 @@ footer {
   color: var(--muted);
 }
 
-footer a { color: var(--muted); text-decoration: none; }
+footer a { color: var(--muted); }
 footer a:hover { color: var(--brand); }
 
 @media (max-width: 600px) {
