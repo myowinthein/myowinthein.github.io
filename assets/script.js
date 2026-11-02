@@ -169,13 +169,13 @@ function projectCards(projects) {
     const desc = escapeHtml(r.description || '');
     const name = escapeHtml(r.name);
     const projectLink = url === repoUrl ? '' : `
-          <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="Project page for ${name}">Project page →</a>`;
+          <a href="${escapeHtml(url)}" rel="noopener noreferrer" aria-label="Project page for ${name}">Project page →</a>`;
     return `
       <article class="card">
         <h3 class="card-name">${name}</h3>
         <p class="card-desc">${desc}</p>
         <div class="card-links">${projectLink}
-          <a href="${escapeHtml(repoUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Source for ${name}">Source →</a>
+          <a href="${escapeHtml(repoUrl)}" rel="noopener noreferrer" aria-label="Source for ${name}">Source →</a>
         </div>
       </article>`;
   }).join('');
