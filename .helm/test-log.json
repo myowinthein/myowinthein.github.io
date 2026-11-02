@@ -1,8 +1,26 @@
 {
   "schema_version": 3,
-  "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+  "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301",
   "full_scan_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
   "cases": [
+    {
+      "id": "g-03063a55-0f7a-4615-ba49-bb1190a805a9",
+      "expected": "Social account links show LinkedIn, Medium (medium.com and its subdomains), a named provider, or the hostname without a leading www. as their label, in that order of preference.",
+      "basis": [
+        "assets/script.js:96-116 (renderProfileLinks label derivation)",
+        "test/script.test.cjs: only LinkedIn, *.medium.com and escaped provider names are asserted; the hostname fallback and www. stripping are not"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "low",
+      "reason": "A label regression would show a wrong or empty link name for generic social accounts, a minor display fault with no data or safety consequence.",
+      "action": "add",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301"
+    },
     {
       "id": "g-4c377636-98d1-4a5e-9c94-a04c1397ba47",
       "expected": "The listing renders every synthetic repository in API order across pages using the requested page size, without omissions or duplicates.",
@@ -116,6 +134,45 @@
         "command": "node --test test/script.test.cjs",
         "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic initial HTTP, rejected fetch, invalid JSON, and later-page failure responses."
       }
+    },
+    {
+      "id": "g-b4cadd14-fd5f-4166-8686-b8dbea6aaa0d",
+      "expected": "index.html provides every element ID that assets/script.js reads, links the external script and stylesheet, and contains no inline script or style blocks.",
+      "basis": [
+        "AGENTS.md: Hard Safety Rules (no inline script or style blocks)",
+        "assets/script.js: getElementById calls for theme-toggle, profile-*, page-*, grid, load-more, project-status",
+        "test/script.test.cjs:40-52 (the harness defines stub elements by hardcoded ID and never reads index.html)"
+      ],
+      "paths": [
+        "index.html",
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "medium",
+      "reason": "Renaming or removing an element ID in index.html makes the script throw on load and stops theme, profile and project loading on the public site, and no test would detect it; inline blocks would break a stated safety rule unnoticed.",
+      "action": "add",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301"
+    },
+    {
+      "id": "g-b7938d79-41bf-432b-b01a-44d976543340",
+      "expected": "Project cards link to GitHub and homepages in the same tab, without target attributes, and keep rel=\"noopener noreferrer\".",
+      "basis": [
+        "AGENTS.md: Domain Rules (card links open in the same tab; keep rel)",
+        "assets/script.js:203-219 (projectCards)",
+        "test/script.test.cjs:774-792 (asserts hrefs and escaping but not the absence of target or the rel value)"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "low",
+      "reason": "Re-adding target=\"_blank\" or dropping rel would pass every current test; the effect is a navigation-behavior regression with no data loss.",
+      "action": "improve",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301"
     },
     {
       "id": "g-e500f24b-4f40-4356-a2bd-5648b9dd0642",
