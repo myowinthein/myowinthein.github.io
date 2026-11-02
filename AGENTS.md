@@ -26,7 +26,7 @@ public GitHub repositories as project cards.
 ## Architecture Pointers
 
 - `index.html`: page shell, metadata, theme button, loading state, and external asset links.
-- `assets/script.js`: theme initialization/toggle and paginated GitHub fetch/filter/render.
+- `assets/script.js`: theme initialization/toggle and on-demand GitHub fetch/filter/render.
 - `assets/style.css`: responsive cards and theme variables; dark overrides use
   `[data-theme="dark"]` on `<html>`.
 - `test/script.test.cjs`: runs the shipped script in a VM; covers filtering, pagination,
@@ -37,7 +37,9 @@ public GitHub repositories as project cards.
 - Include only public, non-fork repositories owned by `myowinthein`; exclude
   `myowinthein.github.io` itself. Owner and self-name comparisons are case-insensitive.
 - GitHub Pages and a homepage are optional. Archived repositories remain eligible.
-- Fetch every page in updated order, 100 repositories per request, until a shorter page.
+- Show up to 3 project cards initially; Load more appends up to 3 more per click.
+  Fetch API pages of 3 repositories in updated order only as needed to fill a batch;
+  retain extra eligible results and stop after a shorter API page.
 - A valid HTTP(S) homepage gets a "View site" link; otherwise use the GitHub repository
   URL and "View repository". Do not restore the old generated Pages URL fallback.
 - Theme initialization uses the saved `localStorage.theme` choice when present,
@@ -61,8 +63,8 @@ public GitHub repositories as project cards.
 
 - Ownership plus non-fork status is the implemented approximation of "created by the
   user"; the listing does not verify who originally created a transferred repository.
-- A failed API request, including any later page, replaces the entire listing with
-  the error state. Requests are unauthenticated and subject to GitHub rate limits.
+- A failed API request leaves displayed cards and buffered results intact. Try again
+  retries the failed page. Requests are unauthenticated and subject to GitHub rate limits.
 - Theme initialization reads the system preference once; it does not listen for later
   system theme changes.
 - The favicon URL is `https://myowin.dev/favicon.svg`; no local favicon file is tracked.

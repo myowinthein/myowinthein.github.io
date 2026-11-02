@@ -28,8 +28,10 @@ open index.html
 On other systems, open the file from your file manager. An internet connection is
 required to fetch projects from GitHub.
 
-The page loads repositories owned by `myowinthein`, sorted by most recently updated,
-and follows pagination to include all results. A repository appears only when it is:
+The page initially shows up to 3 projects, sorted by most recently updated.
+Select **Load more** to fetch and append up to 3 more. It requests additional GitHub
+API pages only as needed, including when excluded repositories leave a batch short.
+The button disappears after all projects are loaded. A repository appears only when it is:
 
 - Public.
 - Not a fork.
@@ -42,9 +44,9 @@ repository. Repository names and descriptions come from GitHub.
 Use the theme button to switch between light and dark. The initial theme follows
 the system preference unless a previous choice is saved in the browser.
 
-If GitHub rejects a request, including a later page, the listing shows
-"Could not load projects." Requests are unauthenticated and subject to GitHub's
-rate limits.
+If a request fails, use **Try again** to retry. Projects already displayed remain
+visible, and the next attempt resumes from the failed API page. Requests are
+unauthenticated and subject to GitHub's rate limits.
 
 ## Development
 
