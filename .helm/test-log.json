@@ -1,0 +1,87 @@
+{
+  "schema_version": 3,
+  "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+  "full_scan_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+  "cases": [
+    {
+      "id": "g-4c377636-98d1-4a5e-9c94-a04c1397ba47",
+      "expected": "The listing renders every synthetic repository in API order across pages using the requested page size, without omissions or duplicates.",
+      "basis": [
+        "AGENTS.md: Domain Rules (all pages in updated order)",
+        "README.md: Usage (all results, recently updated order)",
+        "assets/script.js:39-51 (page-size dependent termination)",
+        "test/script.test.cjs:89-104 (fixture ignores requested page size; checks only count and first/last order)"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "medium",
+      "reason": "The API fixture always returns 100 items regardless of the request, so a page-size regression could pass tests while dropping real projects; current first/last checks also miss middle-list duplication.",
+      "action": "improve",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+    },
+    {
+      "id": "g-5810ae5d-48d5-4d98-884a-a18074cb6887",
+      "expected": "With no saved choice the initial theme follows the system preference; a saved choice takes precedence; toggling twice persists the new choice and a reload restores it.",
+      "basis": [
+        "AGENTS.md: Domain Rules (theme initialization and saved choice)",
+        "README.md: Usage (theme preference)",
+        "assets/script.js:1-18; current VM harness does not assert theme state or click behavior"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "medium",
+      "reason": "The theme toggle is one of the site's two main behaviors, but the current harness discards attributes, storage writes, and click handlers, leaving regressions unobserved.",
+      "action": "add",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+    },
+    {
+      "id": "g-7d5a943a-2c2f-47d5-90a4-beb988a86f44",
+      "expected": "An initial HTTP failure, rejected fetch, invalid JSON, or later-page failure leaves the grid in the documented error state without partial project cards.",
+      "basis": [
+        "README.md: Usage (GitHub request failure state)",
+        "assets/script.js:39-84 (fetch and catch path)",
+        "test/script.test.cjs:130-137 (only later-page HTTP failure is asserted)"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "medium",
+      "reason": "A failure of project loading replaces the core page content; first-page network and parse failures are not currently asserted, and the existing error check does not prove that partial cards are absent.",
+      "action": "improve",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+    },
+    {
+      "id": "g-e500f24b-4f40-4356-a2bd-5648b9dd0642",
+      "expected": "Clarify whether project loading and theme interaction must keep working when browser local storage reads or writes throw, and what display/persistence fallback is intended.",
+      "basis": [
+        "assets/script.js:10,16 (storage calls outside an error boundary)",
+        "AGENTS.md: Domain Rules (saved and system theme choices; storage-error fallback unspecified)"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "unknown",
+      "reason": "The code demonstrates interrupted initialization or toggle handling when storage access fails, but an intended recovery contract and its required impact are not specified.",
+      "action": "add",
+      "layer": "component",
+      "blocker": {
+        "kind": "clarification",
+        "note": "Owner decision needed on theme/project behavior when browser storage is unavailable; no characterization test or production fix selected."
+      },
+      "state": "open",
+      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+    }
+  ]
+}
