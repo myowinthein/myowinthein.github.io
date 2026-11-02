@@ -6,9 +6,9 @@ My GitHub Pages landing page, with my profile and public projects.
 
 ## Why I built this
 
-I hadn't planned to build this page. After I started using GitHub Pages for
-projects such as [Agent Helm](https://myowinthein.github.io/agent-helm/), I noticed
-that the parent address, `myowinthein.github.io`, had no page of its own.
+I hadn't planned to build this page. After I started using GitHub Pages for my
+other projects, I noticed that the parent address, `myowinthein.github.io`, had
+no page of its own.
 
 So I created this repository as a simple place to share my profile and projects.
 GitHub supplies the content, so I can keep it current by updating my profile and
