@@ -1,0 +1,66 @@
+{
+  "schema_version": 2,
+  "assessed_commit": "aeed13a264b24dd9a06795b282159a09632c4e67",
+  "full_scan_commit": "aeed13a264b24dd9a06795b282159a09632c4e67",
+  "findings": [
+    {
+      "id": "r-13c9a457-50c1-4038-8b19-9fe24c3ca2c3",
+      "category": "Code Quality",
+      "summary": "The GitHub request page size and pagination termination share a duplicated numeric value that must be kept synchronized.",
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "aeed13a264b24dd9a06795b282159a09632c4e67",
+        "date": "2026-11-02"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "aeed13a264b24dd9a06795b282159a09632c4e67",
+        "date": "2026-11-02",
+        "priority": "low",
+        "risk": "safe",
+        "reason": "The same pagination contract is encoded in both the URL query and batch-length condition. Naming the value once removes the need to coordinate those two locations without changing the current request behavior.",
+        "evidence": [
+          "assets/script.js: fetchRepos uses a literal per_page=100 in the request and batch.length === 100 in the stop condition.",
+          "test/script.test.cjs: loads every repository once in updated order using API pagination verifies the requested page size, complete ordered list, card count, and page sequence."
+        ],
+        "invariant": "Keep the exact GitHub request parameters and request order, 100-item page size, all-repository result order, filter and link behavior, and complete error-state behavior unchanged."
+      },
+      "state": "open",
+      "depends_on": []
+    },
+    {
+      "id": "r-45c6892e-d88a-44dd-b9e7-58cbce21618d",
+      "category": "Code Quality",
+      "summary": "The Known Traps section incorrectly states that current tests stub theme APIs without asserting theme behavior.",
+      "paths": [
+        "AGENTS.md",
+        "test/script.test.cjs"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "aeed13a264b24dd9a06795b282159a09632c4e67",
+        "date": "2026-11-02"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "aeed13a264b24dd9a06795b282159a09632c4e67",
+        "date": "2026-11-02",
+        "priority": "low",
+        "risk": "safe",
+        "reason": "The outdated statement can mislead future maintainers into treating existing theme coverage as absent. Removing only that false clause restores factual accuracy while retaining the actual system-theme limitation.",
+        "evidence": [
+          "AGENTS.md: Known Traps contains the sentence 'Current tests stub theme APIs rather than asserting theme behavior.'",
+          "test/script.test.cjs: four initialization scenarios assert theme selection, and persists theme toggles and restores the choice on reload asserts click behavior, storage writes, and restoration.",
+          "The most recent accepted test run executed all 18 component cases successfully; test and production script bytes are unchanged at this scan source."
+        ],
+        "invariant": "Preserve the documented one-time system preference behavior and every other instruction, configuration declaration, rule pointer, review-marker value, and site behavior; remove only the obsolete test-coverage sentence."
+      },
+      "state": "open",
+      "depends_on": []
+    }
+  ]
+}
