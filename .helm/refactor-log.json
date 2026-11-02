@@ -29,8 +29,31 @@
         ],
         "invariant": "Keep the exact GitHub request parameters and request order, 100-item page size, all-repository result order, filter and link behavior, and complete error-state behavior unchanged."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "d417b1ba26bf1d2706e2577e0aaef9b2e6a87bd2",
+        "date": "2026-11-02",
+        "method": "runtime",
+        "evidence": [
+          "fetchRepos now names the 100-item page size once and uses it for both query construction and pagination termination.",
+          "Existing pagination, filtering, link safety, theme, empty-state, and dependency-failure component assertions all remain unchanged and passed."
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js",
+            "scope": "Browser script syntax in the project root",
+            "outcome": "Passed with exit status 0."
+          },
+          {
+            "command": "node --test test/script.test.cjs",
+            "scope": "All 18 Node.js VM component tests; synthetic browser state and GitHub responses",
+            "outcome": "18 passed; 0 failed, skipped, cancelled, or todo."
+          }
+        ]
+      }
     },
     {
       "id": "r-45c6892e-d88a-44dd-b9e7-58cbce21618d",
