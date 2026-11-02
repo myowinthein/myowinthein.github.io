@@ -82,8 +82,20 @@
         ],
         "invariant": "Preserve the documented one-time system preference behavior and every other instruction, configuration declaration, rule pointer, review-marker value, and site behavior; remove only the obsolete test-coverage sentence."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "4270cc9d33ac0521117d8d17b6509eea949c871e",
+        "date": "2026-11-02",
+        "method": "static",
+        "evidence": [
+          "Compared AGENTS.md against its accepted pre-change blob: the only removed bytes are the obsolete sentence claiming theme behavior is not asserted.",
+          "The current test file retains four theme initialization cases and the persisted-toggle/reload case.",
+          "The documented one-time system preference behavior, project settings, rule pointers, Claude adapter, and original last-reviewed marker are unchanged."
+        ]
+      }
     }
   ]
 }
