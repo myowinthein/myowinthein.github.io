@@ -9,6 +9,11 @@ const vm = require('node:vm');
 // declarations (escapeHtml, safeUrl, applyTheme) become properties of the
 // sandbox, so we can test the actual shipped code with no source changes
 // and no npm/jsdom dependency.
+const ELEMENT_IDS = [
+  'grid', 'theme-toggle', 'load-more', 'project-status', 'profile-name', 'profile-bio',
+  'profile-location', 'profile-links', 'page-description', 'page-og-title', 'page-og-description',
+];
+
 function element() {
   const attributes = new Map();
   const handlers = new Map();
@@ -37,19 +42,7 @@ function loadScript(
   const code = fs.readFileSync(path.join(__dirname, '../assets/script.js'), 'utf8');
   const attributes = new Map();
   if (savedTheme !== null) storage.set('theme', savedTheme);
-  const elements = {
-    grid: element(),
-    'theme-toggle': element(),
-    'load-more': element(),
-    'project-status': element(),
-    'profile-name': element(),
-    'profile-bio': element(),
-    'profile-location': element(),
-    'profile-links': element(),
-    'page-description': element(),
-    'page-og-title': element(),
-    'page-og-description': element(),
-  };
+  const elements = Object.fromEntries(ELEMENT_IDS.map(id => [id, element()]));
   elements['profile-name'].textContent = 'myowinthein';
   elements['profile-bio'].hidden = true;
   elements['profile-location'].hidden = true;
@@ -391,6 +384,14 @@ test('ignores an invalid saved theme in favor of the system preference', async (
   assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
 });
 
+test('index.html provides every element the script reads and keeps scripts and styles external', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  for (const id of ELEMENT_IDS) assert.match(html, new RegExp(`\\sid="${id}"`), `missing id ${id}`);
+  assert.match(html, /<script src="assets\/script\.js"><\/script>/);
+  assert.match(html, /<link rel="stylesheet" href="assets\/style\.css">/);
+  assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)|<style/i);
+});
+
 test('escapeHtml escapes &, <, >, and "', () => {
   const { escapeHtml } = loadScript();
   assert.equal(escapeHtml('<script>&"</script>'), '&lt;script&gt;&amp;&quot;&lt;/script&gt;');
@@ -581,6 +582,22 @@ test('follows social-account pagination without dropping earlier links', async (
   const links = sandbox.document.getElementById('profile-links').innerHTML;
   assert.match(links, /https:\/\/example.com\/1/);
   assert.match(links, /https:\/\/example.com\/2/);
+});
+
+test('labels social links by provider, Medium domain, or hostname without www', async () => {
+  const sandbox = loadScript(undefined, {
+    socialFetch: async () => response([
+      { provider: 'mastodon', url: 'https://mastodon.example/@me' },
+      { provider: 'generic', url: 'https://www.example.org/me' },
+      { provider: 'generic', url: 'https://medium.com/@me' },
+      { provider: 'generic', url: 'https://notmedium.com/me' },
+      { url: 'https://www.no-provider.example/' },
+    ]),
+  });
+  await sandbox.ready;
+  const labels = Array.from(
+    sandbox.document.getElementById('profile-links').innerHTML.matchAll(/>([^<]+)<\/a>/g), m => m[1]);
+  assert.deepEqual(labels, ['GitHub', 'mastodon', 'example.org', 'Medium', 'notmedium.com', 'no-provider.example']);
 });
 
 test('retains safe fallbacks when profile and social endpoints return invalid data', async () => {
@@ -789,6 +806,8 @@ test('uses safe homepages and escapes API text and URL attributes', async () => 
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.doesNotMatch(html, /javascript:|<img|<script>/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/website"/);
+  assert.doesNotMatch(html, /\starget=/);
+  assert.equal((html.match(/<a [^>]*rel="noopener noreferrer"/g) || []).length, (html.match(/<a /g) || []).length);
 });
 
 test('uses current GitHub copy for every project without maintained overrides', async () => {
