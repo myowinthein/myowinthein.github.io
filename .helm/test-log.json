@@ -18,8 +18,22 @@
       "reason": "A label regression would show a wrong or empty link name for generic social accounts, a minor display fault with no data or safety consequence.",
       "action": "add",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301"
+      "state": "resolved",
+      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301",
+      "tests": [
+        "test/script.test.cjs::labels social links by provider, Medium domain, or hostname without www"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::labels social links by provider, Medium domain, or hostname without www"
+        ],
+        "method": "runtime",
+        "outcome": "All 53 tests passed with zero failures, skips, or todos. The new test asserts the exact label order for a named provider, a www. host, medium.com, a lookalike host and a missing provider. Removing the www. stripping in a scratchpad copy made it fail.",
+        "commit": "a2341f1225e1ab70448f8a6bf1c7604e521d14f3",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic social-account responses."
+      }
     },
     {
       "id": "g-4c377636-98d1-4a5e-9c94-a04c1397ba47",
@@ -152,8 +166,22 @@
       "reason": "Renaming or removing an element ID in index.html makes the script throw on load and stops theme, profile and project loading on the public site, and no test would detect it; inline blocks would break a stated safety rule unnoticed.",
       "action": "add",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301"
+      "state": "resolved",
+      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301",
+      "tests": [
+        "test/script.test.cjs::index.html provides every element the script reads and keeps scripts and styles external"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::index.html provides every element the script reads and keeps scripts and styles external"
+        ],
+        "method": "runtime",
+        "outcome": "All 53 tests passed with zero failures, skips, or todos. The test checks all 11 harness element IDs in index.html, the linked script and stylesheet, and the absence of inline script or style blocks. A renamed ID and an inline style block in scratchpad copies each made it fail.",
+        "commit": "a2341f1225e1ab70448f8a6bf1c7604e521d14f3",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; static read of index.html, with the harness ID list as the script's element contract."
+      }
     },
     {
       "id": "g-b7938d79-41bf-432b-b01a-44d976543340",
@@ -171,30 +199,58 @@
       "reason": "Re-adding target=\"_blank\" or dropping rel would pass every current test; the effect is a navigation-behavior regression with no data loss.",
       "action": "improve",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301"
+      "state": "resolved",
+      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301",
+      "tests": [
+        "test/script.test.cjs::uses safe homepages and escapes API text and URL attributes"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::uses safe homepages and escapes API text and URL attributes"
+        ],
+        "method": "runtime",
+        "outcome": "All 53 tests passed with zero failures, skips, or todos. The extended test asserts no target attribute and that every rendered anchor keeps rel=\"noopener noreferrer\". Adding target=\"_blank\" to the Source link in a scratchpad copy made it fail.",
+        "commit": "a2341f1225e1ab70448f8a6bf1c7604e521d14f3",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic repositories with safe, unsafe and invalid homepages."
+      }
     },
     {
       "id": "g-e500f24b-4f40-4356-a2bd-5648b9dd0642",
-      "expected": "Clarify whether project loading and theme interaction must keep working when browser local storage reads or writes throw, and what display/persistence fallback is intended.",
+      "expected": "When browser local storage reads or writes throw, project loading and the visible theme change still work; the theme choice and cache are simply not persisted.",
       "basis": [
-        "assets/script.js:10,16 (storage calls outside an error boundary)",
-        "AGENTS.md: Domain Rules (saved and system theme choices; storage-error fallback unspecified)"
+        "AGENTS.md: Domain Rules (tolerate denied storage reads/writes so project loading and visible theme changes still work; blocked, full, or corrupt storage must not break live loading)",
+        "assets/script.js:13-30,68-91 (storage access inside try/catch)"
       ],
       "paths": [
         "assets/script.js",
         "test/script.test.cjs"
       ],
-      "priority": "unknown",
-      "reason": "The code demonstrates interrupted initialization or toggle handling when storage access fails, but an intended recovery contract and its required impact are not specified.",
+      "priority": "medium",
+      "reason": "Blocked storage is common (private windows, denied site data) and would otherwise stop theme and project loading on the public site; the project instructions now state the intended fallback, which resolves the earlier clarification.",
       "action": "add",
       "layer": "component",
-      "blocker": {
-        "kind": "clarification",
-        "note": "Owner decision needed on theme/project behavior when browser storage is unavailable; no characterization test or production fix selected."
-      },
-      "state": "open",
-      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d"
+      "state": "resolved",
+      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301",
+      "tests": [
+        "test/script.test.cjs::loads projects and uses the system theme when storage reads are blocked",
+        "test/script.test.cjs::changes the visible theme even when its preference cannot be saved",
+        "test/script.test.cjs::continues displaying fresh data when the cache cannot be written"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::loads projects and uses the system theme when storage reads are blocked",
+          "test/script.test.cjs::changes the visible theme even when its preference cannot be saved",
+          "test/script.test.cjs::continues displaying fresh data when the cache cannot be written"
+        ],
+        "method": "runtime",
+        "outcome": "All 53 tests passed with zero failures, skips, or todos. Three tests cover blocked storage reads, unwritable theme storage and an unwritable cache while data still renders.",
+        "commit": "a2341f1225e1ab70448f8a6bf1c7604e521d14f3",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; storage stubs that throw on read or write."
+      }
     }
   ]
 }
