@@ -29,6 +29,7 @@ function loadScript(
   fetchImpl = () => Promise.resolve({ ok: false, status: 404 }),
   {
     savedTheme = null, prefersDark = false, storage = new Map(), storageApi,
+    now = Date.now(),
     profileFetch = async () => ({ ok: false, status: 404 }),
     socialFetch = async () => ({ ok: false, status: 404 }),
   } = {},
@@ -75,6 +76,7 @@ function loadScript(
       return profileFetch(url);
     },
     URL,
+    Date: class extends Date { static now() { return now; } },
   };
   vm.createContext(sandbox);
   sandbox.ready = vm.runInContext(code, sandbox);
@@ -93,6 +95,248 @@ for (const scenario of [
     assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), scenario.expected);
   });
 }
+
+const CACHE_TEST_TIME = 1_000_000;
+
+async function seedCache(storage) {
+  const sandbox = loadScript(paginatedFetch([repo('cached-project')]), {
+    storage, now: CACHE_TEST_TIME,
+    profileFetch: async () => response({ name: 'Cached Name', bio: 'Cached bio.', blog: 'https://cached.example/' }),
+    socialFetch: async () => response([{ provider: 'generic', url: 'https://cached.medium.com/' }]),
+  });
+  await sandbox.ready;
+  return sandbox;
+}
+
+test('reuses fresh profile, social, and repository caches without API requests', async () => {
+  const storage = new Map();
+  await seedCache(storage);
+  let requests = 0;
+  const unexpected = async () => { requests += 1; throw new Error('Unexpected API request'); };
+  const sandbox = loadScript(unexpected, {
+    storage, now: CACHE_TEST_TIME + 5 * 60 * 1000 - 1,
+    profileFetch: unexpected, socialFetch: unexpected,
+  });
+  await sandbox.ready;
+  assert.equal(requests, 0);
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Cached Name');
+  assert.match(sandbox.document.getElementById('profile-links').innerHTML, /Medium/);
+  assert.match(sandbox.document.getElementById('grid').innerHTML, /cached-project/);
+});
+
+test('shows expired data immediately, then replaces it and renews the cache after five minutes', async () => {
+  const storage = new Map();
+  await seedCache(storage);
+  let finishProfile, finishSocial, finishProjects;
+  const sandbox = loadScript(() => new Promise(resolve => { finishProjects = resolve; }), {
+    storage, now: CACHE_TEST_TIME + 5 * 60 * 1000,
+    profileFetch: () => new Promise(resolve => { finishProfile = resolve; }),
+    socialFetch: () => new Promise(resolve => { finishSocial = resolve; }),
+  });
+  const get = id => sandbox.document.getElementById(id);
+  assert.equal(get('profile-name').textContent, 'Cached Name');
+  assert.match(get('profile-links').innerHTML, /Medium/);
+  assert.match(get('grid').innerHTML, /cached-project/);
+  assert.equal(get('project-status').textContent, 'Showing cached projects…');
+  finishProfile(response({ name: 'Fresh Name', blog: 'https://fresh.example/' }));
+  finishSocial(response([{ provider: 'linkedin', url: 'https://www.linkedin.com/in/fresh/' }]));
+  finishProjects(response([repo('fresh-project')]));
+  await sandbox.ready;
+  assert.equal(get('profile-name').textContent, 'Fresh Name');
+  assert.match(get('profile-links').innerHTML, /LinkedIn/);
+  assert.doesNotMatch(get('profile-links').innerHTML, /Medium/);
+  assert.match(get('grid').innerHTML, /fresh-project/);
+  assert.doesNotMatch(get('grid').innerHTML, /cached-project/);
+  let requests = 0;
+  const unexpected = async () => { requests += 1; throw new Error('Unexpected API request'); };
+  const nextVisit = loadScript(unexpected, {
+    storage, now: CACHE_TEST_TIME + 5 * 60 * 1000 + 1,
+    profileFetch: unexpected, socialFetch: unexpected,
+  });
+  await nextVisit.ready;
+  assert.equal(requests, 0);
+  assert.equal(nextVisit.document.getElementById('profile-name').textContent, 'Fresh Name');
+});
+
+test('retains expired data after API errors and retries the failed project page without duplicates', async () => {
+  const storage = new Map();
+  await seedCache(storage);
+  const pages = [];
+  let recover = false;
+  const sandbox = loadScript(async url => {
+    pages.push(new URL(url).searchParams.get('page'));
+    return recover ? response([repo('recovered-project')]) : { ok: false, status: 403 };
+  }, {
+    storage, now: CACHE_TEST_TIME + 5 * 60 * 1000,
+    profileFetch: async () => { throw new TypeError('Network unavailable'); },
+    socialFetch: async () => ({ ok: false, status: 503 }),
+  });
+  await sandbox.ready;
+  const get = id => sandbox.document.getElementById(id);
+  assert.equal(get('profile-name').textContent, 'Cached Name');
+  assert.match(get('profile-links').innerHTML, /Medium/);
+  assert.match(get('grid').innerHTML, /cached-project/);
+  assert.equal(get('project-status').textContent, 'Showing cached projects. Could not refresh. Try again.');
+  assert.equal(get('load-more').hidden, false);
+  assert.equal(get('load-more').disabled, false);
+  recover = true;
+  await get('load-more').click();
+  assert.deepEqual(pages, ['1', '1']);
+  assert.match(get('grid').innerHTML, /recovered-project/);
+  assert.doesNotMatch(get('grid').innerHTML, /cached-project/);
+  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 1);
+  assert.equal(get('load-more').hidden, true);
+});
+
+test('preserves pagination when repository pages are served from cache', async () => {
+  const storage = new Map();
+  const repositories = Array.from({ length: 13 }, (_, i) => repo(`cached-${i}`));
+  const firstVisit = loadScript(paginatedFetch(repositories), { storage, now: CACHE_TEST_TIME });
+  await firstVisit.ready;
+  await firstVisit.document.getElementById('load-more').click();
+  await firstVisit.document.getElementById('load-more').click();
+  let requests = 0;
+  const secondVisit = loadScript(async () => { requests += 1; throw new Error('Unexpected fetch'); }, {
+    storage, now: CACHE_TEST_TIME + 1000,
+  });
+  await secondVisit.ready;
+  const get = id => secondVisit.document.getElementById(id);
+  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 6);
+  assert.equal(get('load-more').hidden, false);
+  await get('load-more').click();
+  await get('load-more').click();
+  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 13);
+  assert.equal(get('load-more').hidden, true);
+  assert.equal(requests, 0);
+});
+
+for (const corruption of ['invalid JSON', 'missing timestamp', 'future timestamp', 'wrong data shape']) {
+  test(`ignores cache with ${corruption} and fetches valid replacement data`, async () => {
+    const storage = new Map();
+    await seedCache(storage);
+    for (const [key, raw] of storage) {
+      const entry = JSON.parse(raw);
+      if (corruption === 'missing timestamp') delete entry.savedAt;
+      if (corruption === 'future timestamp') entry.savedAt = CACHE_TEST_TIME + 10_000;
+      if (corruption === 'wrong data shape') entry.data = null;
+      storage.set(key, corruption === 'invalid JSON' ? '{broken' : JSON.stringify(entry));
+    }
+    let requests = 0;
+    const sandbox = loadScript(async () => { requests += 1; return response([repo('replacement-project')]); }, {
+      storage, now: CACHE_TEST_TIME + 1000,
+      profileFetch: async () => { requests += 1; return response({ name: 'Replacement Name' }); },
+      socialFetch: async () => { requests += 1; return response([]); },
+    });
+    await sandbox.ready;
+    assert.equal(requests, 3);
+    assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Replacement Name');
+    assert.match(sandbox.document.getElementById('grid').innerHTML, /replacement-project/);
+  });
+}
+
+test('does not cache failed requests or change unrelated browser storage', async () => {
+  const storage = new Map([['theme', 'dark'], ['other-app-key', 'keep']]);
+  const sandbox = loadScript(undefined, { storage });
+  await sandbox.ready;
+  assert.deepEqual(Array.from(storage), [['theme', 'dark'], ['other-app-key', 'keep']]);
+});
+
+test('continues displaying fresh data when the cache cannot be written', async () => {
+  const sandbox = loadScript(paginatedFetch([repo('available-project')]), {
+    storageApi: { getItem() { return null; }, setItem() { throw new Error('Storage quota exceeded'); } },
+    profileFetch: async () => response({ name: 'Available Name' }),
+    socialFetch: async () => response([{ provider: 'generic', url: 'https://example.medium.com/' }]),
+  });
+  await sandbox.ready;
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Available Name');
+  assert.match(sandbox.document.getElementById('profile-links').innerHTML, /Medium/);
+  assert.match(sandbox.document.getElementById('grid').innerHTML, /available-project/);
+});
+
+test('caches successful empty results without turning them into API errors', async () => {
+  const storage = new Map();
+  const firstVisit = loadScript(async () => response([]), { storage, now: CACHE_TEST_TIME });
+  await firstVisit.ready;
+  let requests = 0;
+  const nextVisit = loadScript(async () => { requests += 1; throw new Error('Unexpected fetch'); }, {
+    storage, now: CACHE_TEST_TIME + 1000,
+  });
+  await nextVisit.ready;
+  assert.equal(requests, 0);
+  assert.match(nextVisit.document.getElementById('grid').innerHTML, /No projects found/);
+});
+
+test('rejects malformed individual cached repository records before rendering', async () => {
+  const storage = new Map();
+  await seedCache(storage);
+  for (const [key, raw] of storage) {
+    if (!key.includes('/repos?')) continue;
+    const entry = JSON.parse(raw);
+    entry.data = [null];
+    storage.set(key, JSON.stringify(entry));
+  }
+  let requests = 0;
+  const sandbox = loadScript(async () => { requests += 1; return response([repo('valid-project')]); }, {
+    storage, now: CACHE_TEST_TIME + 1000,
+  });
+  await sandbox.ready;
+  assert.equal(requests, 1);
+  assert.match(sandbox.document.getElementById('grid').innerHTML, /valid-project/);
+});
+
+test('applies text escaping and URL validation again when replaying cached data', async () => {
+  const storage = new Map();
+  const firstVisit = loadScript(paginatedFetch([
+    repo('<script>', { description: '<img src=x>', homepage: 'javascript:alert(1)' }),
+  ]), {
+    storage, now: CACHE_TEST_TIME,
+    profileFetch: async () => response({ name: '<img src=x>', blog: 'javascript:alert(1)' }),
+    socialFetch: async () => response([{ provider: '<img src=x>', url: 'https://example.com/' }]),
+  });
+  await firstVisit.ready;
+  let requests = 0;
+  const unexpected = async () => { requests += 1; throw new Error('Unexpected API request'); };
+  const nextVisit = loadScript(unexpected, {
+    storage, now: CACHE_TEST_TIME + 1000, profileFetch: unexpected, socialFetch: unexpected,
+  });
+  await nextVisit.ready;
+  assert.equal(requests, 0);
+  const get = id => nextVisit.document.getElementById(id);
+  assert.equal(get('profile-name').textContent, '<img src=x>');
+  assert.match(get('profile-links').innerHTML, /&lt;img src=x&gt;/);
+  assert.match(get('grid').innerHTML, /&lt;script&gt;/);
+  assert.doesNotMatch(get('profile-links').innerHTML + get('grid').innerHTML, /<img|<script>|javascript:/);
+});
+
+test('replaces a failed cached later-page preview while preserving earlier cards', async () => {
+  const storage = new Map();
+  const repositories = Array.from({ length: 13 }, (_, i) => repo(`cached-${i}`));
+  const firstVisit = loadScript(paginatedFetch(repositories), { storage, now: CACHE_TEST_TIME });
+  await firstVisit.ready;
+  await firstVisit.document.getElementById('load-more').click();
+  await firstVisit.document.getElementById('load-more').click();
+  const pages = [];
+  let recover = false;
+  const nextVisit = loadScript(async url => {
+    const page = new URL(url).searchParams.get('page');
+    pages.push(page);
+    if (page === '1') return response(repositories.slice(0, 6), true);
+    return recover ? response([repo('updated-6'), repo('updated-7')]) : { ok: false, status: 503 };
+  }, { storage, now: CACHE_TEST_TIME + 5 * 60 * 1000 });
+  await nextVisit.ready;
+  const get = id => nextVisit.document.getElementById(id);
+  await get('load-more').click();
+  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 12);
+  assert.match(get('project-status').textContent, /Showing cached projects/);
+  recover = true;
+  await get('load-more').click();
+  assert.deepEqual(pages, ['1', '2', '2']);
+  assert.equal((get('grid').innerHTML.match(/class="card"/g) || []).length, 8);
+  assert.match(get('grid').innerHTML, /cached-0/);
+  assert.match(get('grid').innerHTML, /updated-6/);
+  assert.doesNotMatch(get('grid').innerHTML, />cached-6</);
+  assert.equal(get('load-more').hidden, true);
+});
 
 test('persists theme toggles and restores the choice on reload', async () => {
   const storage = new Map();

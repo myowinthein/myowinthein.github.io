@@ -50,7 +50,15 @@ public GitHub repositories as project cards.
   Do not add curated project lists, copy overrides, or duplicate profile details.
 - Profile, social-account, and repository requests run independently. Keep generic
   static fallbacks; hide empty optional fields and deduplicate validated links.
-  Refresh data on page load without requiring a site commit or deployment.
+  Refresh data on page load without requiring a site commit or deployment, subject
+  to the five-minute response cache.
+- Cache successful public API responses and Link metadata in localStorage under
+  `github-directory:v1:myowinthein:` plus the full request URL. Fresh entries avoid
+  API calls; expired entries preview content while refreshing and survive errors.
+  Validate cached data/timestamps; blocked, full, or corrupt storage must not break
+  live loading. Never cache errors or update a cache timestamp on a failed request.
+- Cached project previews do not advance pagination or mark repos seen until a
+  successful refresh. Retry must replace the preview without duplicate cards.
 - Theme initialization uses the saved `localStorage.theme` choice when present,
   otherwise the system preference. Ignore invalid stored values and tolerate denied
   storage reads/writes so project loading and visible theme changes still work.
@@ -80,6 +88,8 @@ public GitHub repositories as project cards.
   preview as well as Pages; the local Python server does not render Markdown routes.
 - Profile/social requests are also unauthenticated and share the GitHub API rate
   limit. Generic static metadata is intentional for crawlers that do not execute JS.
+- Cache expiry controls freshness, not deletion. Cached public data may stay visible
+  when GitHub is unavailable, and entries persist until replaced or cleared.
 - Theme initialization reads the system preference once; it does not listen for later
   system theme changes.
 - The favicon URL is `https://myowin.dev/favicon.svg`; no local favicon file is tracked.
