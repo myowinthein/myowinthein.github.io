@@ -36,25 +36,46 @@ function safeUrl(raw, fallback) {
 
 const grid = document.getElementById('grid');
 
-fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated`)
-  .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
-  .then(repos => {
-    const paged = repos.filter(r => r.has_pages && !r.fork && r.name !== SELF_REPO && r.homepage);
+async function fetchRepos() {
+  const repos = [];
+  let page = 1;
+  let batch;
 
-    if (paged.length === 0) {
+  do {
+    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?type=owner&per_page=100&sort=updated&page=${page}`);
+    if (!res.ok) throw new Error(res.status);
+    batch = await res.json();
+    repos.push(...batch);
+    page += 1;
+  } while (batch.length === 100);
+
+  return repos;
+}
+
+fetchRepos()
+  .then(repos => {
+    const projects = repos.filter(r =>
+      r.private === false &&
+      !r.fork &&
+      r.owner?.login?.toLowerCase() === GITHUB_USER &&
+      r.name.toLowerCase() !== SELF_REPO
+    );
+
+    if (projects.length === 0) {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
       return;
     }
 
-    grid.innerHTML = paged.map(r => {
-      const url  = safeUrl(r.homepage, `https://${SELF_REPO}/${r.name}`);
+    grid.innerHTML = projects.map(r => {
+      const repoUrl = `https://github.com/${GITHUB_USER}/${encodeURIComponent(r.name)}`;
+      const url  = safeUrl(r.homepage, repoUrl);
       const desc = escapeHtml(r.description || '');
       const name = escapeHtml(r.name);
       return `
-        <a class="card" href="${url}" target="_blank" rel="noopener noreferrer">
+        <a class="card" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
           <div class="card-name">${name}</div>
           <div class="card-desc">${desc}</div>
-          <div class="card-link">View site →</div>
+          <div class="card-link">${url === repoUrl ? 'View repository' : 'View site'} →</div>
         </a>`;
     }).join('');
   })

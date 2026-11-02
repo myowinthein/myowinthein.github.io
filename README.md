@@ -1,6 +1,6 @@
 # myowinthein.github.io
 
-Personal landing page for [Myo Win Thein](https://github.com/myowinthein), listing open source projects with GitHub Pages sites.
+Personal landing page for [Myo Win Thein](https://github.com/myowinthein), listing public repositories owned by the user.
 
 ## Install
 
@@ -14,7 +14,7 @@ open index.html   # macOS; use xdg-open on Linux or just double-click
 
 ## Usage
 
-The page fetches the owner's public GitHub repos at runtime and renders cards for any repo that has GitHub Pages enabled, isn't a fork, and has a homepage URL set. No build step, no server needed.
+The page fetches all of the owner's public GitHub repos at runtime, following pagination and sorting by most recently updated. Forks and this site's own repository (`myowinthein.github.io`) are excluded. GitHub Pages and a homepage URL are optional: cards link to a valid HTTP(S) homepage when available, otherwise to the GitHub repository. No build step, no server needed.
 
 To deploy changes, push to `main`; GitHub Pages publishes automatically.
 
