@@ -200,7 +200,9 @@ async function loadMoreProjects() {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
     }
     projectStatus.textContent = displayedProjects
-      ? `${projects.length} ${projects.length === 1 ? 'project' : 'projects'} loaded. ${displayedProjects} shown.${hasMore ? '' : ' All projects loaded.'}`
+      ? hasMore
+        ? `Showing ${displayedProjects} ${displayedProjects === 1 ? 'project' : 'projects'}.`
+        : `All ${displayedProjects} ${displayedProjects === 1 ? 'project' : 'projects'} loaded.`
       : '';
     loadMore.textContent = 'Load more';
   } catch {
