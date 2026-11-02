@@ -182,16 +182,20 @@ function eligibleProjects(repos) {
     r.owner.login.toLowerCase() === GITHUB_USER && r.name.toLowerCase() !== SELF_REPO);
 }
 
+function newProjects(repos, seen) {
+  return eligibleProjects(repos).filter(r => {
+    const name = r.name.toLowerCase();
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return true;
+  });
+}
+
 async function fetchNextProjects(onStale) {
   let projects = [];
   do {
     const res = await cachedGitHub(`${USER_API}/repos?type=owner&per_page=${PAGE_SIZE}&sort=updated&page=${nextPage}`, isRepositoryPage, onStale);
-    projects = eligibleProjects(res.data).filter(r => {
-      const name = r.name.toLowerCase();
-      if (seenProjects.has(name)) return false;
-      seenProjects.add(name);
-      return true;
-    });
+    projects = newProjects(res.data, seenProjects);
     nextPage += 1;
     hasMore = hasNextPage(res);
     // Skip fully excluded pages, but leave later nonempty pages for Load more.
@@ -231,13 +235,7 @@ async function loadMoreProjects() {
 
   try {
     const projects = await fetchNextProjects(cached => {
-      const seen = new Set(seenProjects);
-      previewProjects = eligibleProjects(cached.data).filter(project => {
-        const name = project.name.toLowerCase();
-        if (seen.has(name)) return false;
-        seen.add(name);
-        return true;
-      });
+      previewProjects = newProjects(cached.data, new Set(seenProjects));
       if (previewProjects.length) {
         grid.innerHTML = projectCards([...displayedProjects, ...previewProjects]);
         projectStatus.textContent = 'Showing cached projects…';
