@@ -1,6 +1,7 @@
 # myowinthein.github.io
 
-Personal landing page for Myo Win Thein, showcasing public GitHub repositories.
+Personal landing page for Myo Win Thein (Martin), Senior Full-Stack Engineer.
+Introduces the owner, links to the full portfolio, and showcases public GitHub projects.
 
 [Visit the site](https://myowinthein.github.io).
 
@@ -28,25 +29,33 @@ open index.html
 On other systems, open the file from your file manager. An internet connection is
 required to fetch projects from GitHub.
 
-The page initially shows up to 3 projects, sorted by most recently updated.
-Select **Load more** to fetch and append up to 3 more. It requests additional GitHub
-API pages only as needed, including when excluded repositories leave a batch short.
-The button disappears after all projects are loaded. A repository appears only when it is:
+The page requests 6 repositories initially, sorted by most recently updated, and
+shows the eligible projects. Select **Load more** to request the next API page and
+append up to 6 more cards. A batch can be shorter after filtering; only fully
+excluded pages are skipped automatically. GitHub's pagination header determines
+when the button disappears, without an extra request for an empty last page.
+A repository appears only when it is:
 
 - Public.
 - Not a fork.
 - Not this site's own repository, `myowinthein.github.io`.
 
 GitHub Pages and a website URL are optional. Archived repositories can appear.
-Cards link to a valid HTTP(S) website URL when available, otherwise to the GitHub
-repository. Repository names and descriptions come from GitHub.
+Every card has a **Source** link to GitHub and, when a valid HTTP(S) homepage exists,
+a separate **Project page** link. Known projects use short display names and
+descriptions in `PROJECT_DETAILS` in `assets/script.js`; new projects use their
+GitHub names and descriptions automatically.
 
 Use the theme button to switch between light and dark. The initial theme follows
 the system preference unless a previous choice is saved in the browser.
+Theme changes still work when browser storage is unavailable; the choice simply
+cannot persist across visits in that case.
 
 If a request fails, use **Try again** to retry. Projects already displayed remain
 visible, and the next attempt resumes from the failed API page. Requests are
 unauthenticated and subject to GitHub's rate limits.
+The page also keeps a GitHub repository link available when JavaScript is disabled
+or the initial API request fails. The footer links to the published privacy notice.
 
 ## Development
 
@@ -62,6 +71,18 @@ node --check assets/script.js
 
 Tests run the shipped script with mocked browser APIs and GitHub responses;
 they do not require live API access or npm dependencies.
+
+`.github/workflows/checks.yml` runs these checks on pushes and pull requests using
+Node.js 24, with read-only repository permissions and no dependency installation.
+The workflow reports check results; the existing Pages deployment remains automatic.
+
+To preview over localhost, run `python3 -m http.server 8000 --bind 127.0.0.1` and
+open `http://localhost:8000`.
+
+For a browser check, review both themes at a narrow width such as 360px, use Tab
+and Shift+Tab to check focus, activate buttons with Enter or Space, and confirm
+Load more announces its result. With JavaScript disabled, the static introduction,
+portfolio link, and GitHub repository link should remain usable.
 
 ## Deployment
 

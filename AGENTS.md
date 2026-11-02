@@ -25,25 +25,30 @@ public GitHub repositories as project cards.
 
 ## Architecture Pointers
 
-- `index.html`: page shell, metadata, theme button, loading state, and external asset links.
+- `index.html`: static introduction, profile links, accessible page shell, and project fallback.
 - `assets/script.js`: theme initialization/toggle and on-demand GitHub fetch/filter/render.
 - `assets/style.css`: responsive cards and theme variables; dark overrides use
   `[data-theme="dark"]` on `<html>`.
 - `test/script.test.cjs`: runs the shipped script in a VM; covers filtering, pagination,
-  link fallback, escaping, and empty/error states.
+  storage failures, link fallback, escaping, and empty/error states.
+- `.github/workflows/checks.yml`: dependency-free syntax/tests on pushes and pull requests,
+  using Node.js 24. This reports results without gating the legacy Pages deployment.
 
 ## Domain Rules
 
 - Include only public, non-fork repositories owned by `myowinthein`; exclude
   `myowinthein.github.io` itself. Owner and self-name comparisons are case-insensitive.
 - GitHub Pages and a homepage are optional. Archived repositories remain eligible.
-- Show up to 3 project cards initially; Load more appends up to 3 more per click.
-  Fetch API pages of 3 repositories in updated order only as needed to fill a batch;
-  retain extra eligible results and stop after a shorter API page.
-- A valid HTTP(S) homepage gets a "View site" link; otherwise use the GitHub repository
-  URL and "View repository". Do not restore the old generated Pages URL fallback.
+- Request 6 repositories initially; Load more appends the next eligible batch of up
+  to 6. Leave short nonempty batches as they are; skip only fully excluded pages.
+  Use the GitHub Link header's next relation to detect more pages, not batch length.
+- Every card has a Source link to its encoded GitHub repository URL; add a separate
+  Project page link only for a valid HTTP(S) homepage. Never generate a Pages URL.
+- `PROJECT_DETAILS` contains short labels/descriptions for known projects; new repos
+  fall back to API names/descriptions. All rendered values must still be escaped.
 - Theme initialization uses the saved `localStorage.theme` choice when present,
-  otherwise the system preference. Toggling saves an explicit light/dark choice.
+  otherwise the system preference. Ignore invalid stored values and tolerate denied
+  storage reads/writes so project loading and visible theme changes still work.
 
 ## Behavior Rules
 
@@ -63,8 +68,10 @@ public GitHub repositories as project cards.
 
 - Ownership plus non-fork status is the implemented approximation of "created by the
   user"; the listing does not verify who originally created a transferred repository.
-- A failed API request leaves displayed cards and buffered results intact. Try again
+- A failed API request leaves displayed cards intact. Try again
   retries the failed page. Requests are unauthenticated and subject to GitHub rate limits.
+- The privacy footer uses the published absolute URL so it works in the plain local
+  preview as well as Pages; the local Python server does not render Markdown routes.
 - Theme initialization reads the system preference once; it does not listen for later
   system theme changes.
 - The favicon URL is `https://myowin.dev/favicon.svg`; no local favicon file is tracked.

@@ -3,36 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Myo Win Thein</title>
-  <meta name="description" content="Open source projects and personal work.">
-  <meta property="og:title" content="Myo Win Thein">
-  <meta property="og:description" content="Open source projects and personal work.">
-  <meta property="og:url" content="https://myowinthein.github.io">
+  <title>Myo Win Thein | Public projects</title>
+  <meta name="description" content="Public projects by Myo Win Thein (Martin), Senior Full-Stack Engineer. Explore developer tools, career tools, and personal work.">
+  <meta property="og:title" content="Myo Win Thein | Public projects">
+  <meta property="og:description" content="Tools and projects I build and maintain. Find my public projects, source code, and full portfolio.">
+  <meta property="og:url" content="https://myowinthein.github.io/">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://github.com/myowinthein.png">
+  <link rel="canonical" href="https://myowinthein.github.io/">
   <link rel="icon" type="image/svg+xml" href="https://myowin.dev/favicon.svg">
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
-<button class="theme-toggle" id="theme-toggle" title="Toggle theme">☾</button>
+<button class="theme-toggle" id="theme-toggle" type="button" title="Switch to dark theme" aria-label="Switch to dark theme">☾</button>
 
 <header>
-  <h1>Myo Win Thein</h1>
-  <p>Open source projects</p>
+  <h1>Myo Win Thein <span>(Martin)</span></h1>
+  <p class="role">Senior Full-Stack Engineer</p>
+  <p>Tools and projects I build and maintain.</p>
+  <nav class="profile-links" aria-label="Profile links">
+    <a href="https://myowin.dev/">Portfolio</a>
+    <a href="https://github.com/myowinthein">GitHub</a>
+  </nav>
 </header>
 
-<div class="grid" id="grid" aria-busy="true">
-  <p class="loading">Loading projects…</p>
-</div>
+<main>
+  <section aria-labelledby="projects-title">
+    <h2 id="projects-title">Public projects</h2>
+    <div class="grid" id="grid" aria-busy="false">
+      <p class="loading"><a href="https://github.com/myowinthein?tab=repositories">Browse my public repositories on GitHub</a>.</p>
+    </div>
 
-<div class="project-controls">
-  <p class="loading" id="project-status" role="status"></p>
-  <button class="load-more" id="load-more" type="button" aria-controls="grid" hidden>Load more</button>
-</div>
+    <div class="project-controls">
+      <p class="loading" id="project-status" role="status" aria-atomic="true"></p>
+      <button class="load-more" id="load-more" type="button" aria-controls="grid" hidden>Load more</button>
+    </div>
+  </section>
+</main>
 
 <footer>
-  <a href="https://github.com/myowinthein" target="_blank" rel="noopener noreferrer">github.com/myowinthein</a>
+  <a href="https://github.com/myowinthein">GitHub</a>
+  <a href="https://myowinthein.github.io/legal/privacy-policy.html">Privacy notice</a>
 </footer>
 
 <script src="assets/script.js"></script>

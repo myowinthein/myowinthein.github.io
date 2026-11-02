@@ -27,7 +27,7 @@ function element() {
 
 function loadScript(
   fetchImpl = () => Promise.resolve({ ok: false, status: 404 }),
-  { savedTheme = null, prefersDark = false, storage = new Map() } = {},
+  { savedTheme = null, prefersDark = false, storage = new Map(), storageApi } = {},
 ) {
   const code = fs.readFileSync(path.join(__dirname, '../assets/script.js'), 'utf8');
   const attributes = new Map();
@@ -38,6 +38,7 @@ function loadScript(
     'load-more': element(),
     'project-status': element(),
   };
+  elements.grid.innerHTML = '<p><a href="https://github.com/myowinthein?tab=repositories">Browse public repositories</a></p>';
   const sandbox = {
     document: {
       documentElement: {
@@ -47,7 +48,7 @@ function loadScript(
       getElementById(id) { return elements[id]; },
     },
     window: { matchMedia() { return { matches: prefersDark }; } },
-    localStorage: {
+    localStorage: storageApi || {
       getItem(key) { return storage.get(key) ?? null; },
       setItem(key, value) { storage.set(key, value); },
     },
@@ -80,8 +81,10 @@ test('persists theme toggles and restores the choice on reload', async () => {
   const button = sandbox.document.getElementById('theme-toggle');
 
   assert.equal(root.getAttribute('data-theme'), 'light');
+  assert.equal(button.getAttribute('aria-label'), 'Switch to dark theme');
   button.click();
   assert.equal(root.getAttribute('data-theme'), 'dark');
+  assert.equal(button.getAttribute('aria-label'), 'Switch to light theme');
   assert.equal(storage.get('theme'), 'dark');
   button.click();
   assert.equal(root.getAttribute('data-theme'), 'light');
@@ -90,6 +93,37 @@ test('persists theme toggles and restores the choice on reload', async () => {
   const reloaded = loadScript(undefined, { storage, prefersDark: true });
   await reloaded.ready;
   assert.equal(reloaded.document.documentElement.getAttribute('data-theme'), 'light');
+});
+
+test('loads projects and uses the system theme when storage reads are blocked', async () => {
+  const requests = [];
+  const sandbox = loadScript(paginatedFetch([repo('available-project')], requests), {
+    prefersDark: true,
+    storageApi: { getItem() { throw new Error('Storage denied'); }, setItem() {} },
+  });
+  await sandbox.ready;
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
+  assert.equal(requests.length, 1);
+  assert.match(sandbox.document.getElementById('grid').innerHTML, /available-project/);
+});
+
+test('changes the visible theme even when its preference cannot be saved', async () => {
+  const sandbox = loadScript(undefined, {
+    storageApi: { getItem() { return null; }, setItem() { throw new Error('Storage denied'); } },
+  });
+  await sandbox.ready;
+  const button = sandbox.document.getElementById('theme-toggle');
+  assert.doesNotThrow(() => button.click());
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
+  assert.equal(button.getAttribute('aria-label'), 'Switch to light theme');
+  assert.doesNotThrow(() => button.click());
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'light');
+});
+
+test('ignores an invalid saved theme in favor of the system preference', async () => {
+  const sandbox = loadScript(undefined, { savedTheme: 'invalid', prefersDark: true });
+  await sandbox.ready;
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
 });
 
 test('escapeHtml escapes &, <, >, and "', () => {
@@ -126,8 +160,11 @@ function repo(name, overrides = {}) {
   };
 }
 
-function response(repos) {
-  return { ok: true, json: async () => repos };
+function response(repos, hasNextPage = false) {
+  return {
+    ok: true, json: async () => repos,
+    headers: { get() { return hasNextPage ? '<https://api.github.com/users/myowinthein/repos?page=2>; rel="next"' : null; } },
+  };
 }
 
 function paginatedFetch(repositories, requests = []) {
@@ -137,7 +174,7 @@ function paginatedFetch(repositories, requests = []) {
     if (requests.length > repositories.length + 1) throw new Error('Pagination did not finish');
     const page = Number(request.searchParams.get('page'));
     const perPage = Number(request.searchParams.get('per_page'));
-    return response(repositories.slice((page - 1) * perPage, page * perPage));
+    return response(repositories.slice((page - 1) * perPage, page * perPage), page * perPage < repositories.length);
   };
 }
 
@@ -156,40 +193,41 @@ test('lists owned public projects without Pages or a homepage, excluding forks a
   assert.match(html, /archived-project/);
   assert.doesNotMatch(html, /private-project|fork-project|Myowinthein.github.io|other-owner/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/plain-project"/);
-  assert.match(html, /View repository →/);
+  assert.match(html, /Source →/);
 });
 
-test('fetches three projects initially and appends more only when requested', async () => {
-  const repositories = Array.from({ length: 7 }, (_, i) => repo(`project-${i}`));
+test('fetches six projects initially and appends more only when requested', async () => {
+  const repositories = Array.from({ length: 13 }, (_, i) => repo(`project-${i}`));
   const requests = [];
   const sandbox = loadScript(paginatedFetch(repositories, requests));
   await sandbox.ready;
   const grid = sandbox.document.getElementById('grid');
   const button = sandbox.document.getElementById('load-more');
   assert.equal(requests.length, 1);
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 3);
-  assert.doesNotMatch(grid.innerHTML, /project-3/);
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 6);
+  assert.doesNotMatch(grid.innerHTML, /project-6/);
   assert.equal(button.hidden, false);
 
   await button.click();
   assert.equal(requests.length, 2);
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 6);
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 12);
+  assert.equal(sandbox.document.getElementById('project-status').textContent, '6 projects loaded. 12 shown.');
   await button.click();
   assert.equal(requests.length, 3);
   assert.deepEqual(requests.map(url => url.searchParams.get('page')), ['1', '2', '3']);
   assert.ok(requests.every(url => url.searchParams.get('sort') === 'updated'));
-  assert.ok(requests.every(url => url.searchParams.get('per_page') === '3'));
+  assert.ok(requests.every(url => url.searchParams.get('per_page') === '6'));
   const html = grid.innerHTML;
-  assert.equal((html.match(/class="card"/g) || []).length, 7);
-  const renderedNames = Array.from(html.matchAll(/class="card-name">([^<]+)<\/div>/g), match => match[1]);
+  assert.equal((html.match(/class="card"/g) || []).length, 13);
+  const renderedNames = Array.from(html.matchAll(/class="card-name">([^<]+)<\/h3>/g), match => match[1]);
   assert.deepEqual(renderedNames, repositories.map(r => r.name));
   assert.equal(button.hidden, true);
-  assert.equal(sandbox.document.getElementById('project-status').textContent, 'All projects loaded.');
+  assert.equal(sandbox.document.getElementById('project-status').textContent, '1 project loaded. 13 shown. All projects loaded.');
   await button.click();
   assert.equal(requests.length, 3);
 });
 
-test('fills batches across excluded repositories and retains extra eligible projects', async () => {
+test('leaves later API pages for a click when filtering makes the first batch short', async () => {
   const requests = [];
   const sandbox = loadScript(paginatedFetch([
     repo('fork', { fork: true }), repo('alpha'), repo('myowinthein.github.io'),
@@ -197,13 +235,39 @@ test('fills batches across excluded repositories and retains extra eligible proj
   ], requests));
   await sandbox.ready;
   const grid = sandbox.document.getElementById('grid');
+  assert.equal(requests.length, 1);
+  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
+    ['alpha', 'beta', 'gamma', 'delta']);
+  await sandbox.document.getElementById('load-more').click();
   assert.equal(requests.length, 2);
   assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
-    ['alpha', 'beta', 'gamma']);
-  await sandbox.document.getElementById('load-more').click();
-  assert.equal(requests.length, 3);
-  assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
     ['alpha', 'beta', 'gamma', 'delta', 'epsilon']);
+  assert.equal(sandbox.document.getElementById('load-more').hidden, true);
+});
+
+test('shows all five eligible projects in one request when six repos include self', async () => {
+  const requests = [];
+  const sandbox = loadScript(paginatedFetch([
+    repo('myowinthein.github.io'), ...Array.from({ length: 5 }, (_, i) => repo(`project-${i}`)),
+  ], requests));
+  await sandbox.ready;
+  assert.equal(requests.length, 1);
+  assert.equal((sandbox.document.getElementById('grid').innerHTML.match(/class="card"/g) || []).length, 5);
+  assert.equal(sandbox.document.getElementById('load-more').hidden, true);
+  await sandbox.document.getElementById('load-more').click();
+  assert.equal(requests.length, 1);
+});
+
+test('uses Link rather than batch size to recognize an exactly full last page', async () => {
+  let requests = 0;
+  const sandbox = loadScript(async () => {
+    requests += 1;
+    const result = response(Array.from({ length: 6 }, (_, i) => repo(`project-${i}`)));
+    result.headers.get = () => '<https://api.github.com/users/myowinthein/repos?page=1>; rel="prev"';
+    return result;
+  });
+  await sandbox.ready;
+  assert.equal(requests, 1);
   assert.equal(sandbox.document.getElementById('load-more').hidden, true);
 });
 
@@ -213,7 +277,7 @@ test('keeps displayed cards after a later failure and retries the same API page'
     const page = new URL(url).searchParams.get('page');
     requests.push(page);
     if (requests.length === 2) return { ok: false, status: 403 };
-    return response(page === '1' ? [repo('alpha'), repo('beta'), repo('gamma')] : [repo('delta')]);
+    return response(page === '1' ? [repo('alpha'), repo('beta'), repo('gamma')] : [repo('delta')], page === '1');
   });
   await sandbox.ready;
   const grid = sandbox.document.getElementById('grid');
@@ -230,27 +294,25 @@ test('keeps displayed cards after a later failure and retries the same API page'
   assert.equal(button.hidden, true);
 });
 
-test('retains successful partial results when an initial batch needs a retry', async () => {
+test('skips fully excluded pages and retries a failed next page without starting over', async () => {
   const requests = [];
   const sandbox = loadScript(async url => {
     const page = new URL(url).searchParams.get('page');
     requests.push(page);
     if (requests.length === 2) throw new TypeError('Network request failed');
-    if (page === '1') return response([repo('alpha'), repo('fork', { fork: true }), repo('myowinthein.github.io')]);
+    if (page === '1') return response([repo('fork', { fork: true }), repo('myowinthein.github.io')], true);
     if (page === '2') return response([repo('beta'), repo('gamma'), repo('delta')]);
     return response([]);
   });
   await sandbox.ready;
   const button = sandbox.document.getElementById('load-more');
   const grid = sandbox.document.getElementById('grid');
-  assert.equal(grid.innerHTML, '');
+  assert.match(grid.innerHTML, /Browse public repositories/);
   await button.click();
   assert.deepEqual(requests, ['1', '2', '2']);
   assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
-    ['alpha', 'beta', 'gamma']);
-  await button.click();
-  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 4);
-  assert.match(grid.innerHTML, /delta/);
+    ['beta', 'gamma', 'delta']);
+  assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 3);
   assert.equal(button.hidden, true);
 });
 
@@ -259,7 +321,7 @@ test('ignores repeated load requests while an API page is in flight', async () =
   let requests = 0;
   const sandbox = loadScript(async () => {
     requests += 1;
-    if (requests === 1) return response([repo('alpha'), repo('beta'), repo('gamma')]);
+    if (requests === 1) return response([repo('alpha'), repo('beta'), repo('gamma')], true);
     return new Promise(resolve => { finishPage = resolve; });
   });
   await sandbox.ready;
@@ -281,11 +343,12 @@ test('ignores repeated load requests while an API page is in flight', async () =
 test('does not repeat cards when repositories move between API pages', async () => {
   const sandbox = loadScript(async url => {
     const page = new URL(url).searchParams.get('page');
-    if (page === '1') return response([repo('alpha'), repo('beta'), repo('gamma')]);
-    if (page === '2') return response([repo('gamma'), repo('delta'), repo('epsilon')]);
+    if (page === '1') return response([repo('alpha'), repo('beta'), repo('gamma')], true);
+    if (page === '2') return response([repo('gamma'), repo('delta'), repo('epsilon')], true);
     return response([repo('zeta')]);
   });
   await sandbox.ready;
+  await sandbox.document.getElementById('load-more').click();
   await sandbox.document.getElementById('load-more').click();
   const grid = sandbox.document.getElementById('grid');
   assert.deepEqual(Array.from(grid.innerHTML.matchAll(/class="card-name">([^<]+)</g), m => m[1]),
@@ -303,12 +366,32 @@ test('uses safe homepages and escapes API text and URL attributes', async () => 
   await sandbox.document.getElementById('load-more').click();
   const html = sandbox.document.getElementById('grid').innerHTML;
   assert.match(html, /href="https:\/\/example.com\/\?a=1&amp;b=2"/);
-  assert.match(html, /View site →/);
+  assert.match(html, /Project page →/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/unsafe"/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/invalid"/);
   assert.match(html, /&lt;script&gt;/);
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.doesNotMatch(html, /javascript:|<img|<script>/);
+  assert.match(html, /href="https:\/\/github.com\/myowinthein\/website"/);
+});
+
+test('uses concise project copy while retaining project-page and source destinations', async () => {
+  const sandbox = loadScript(paginatedFetch([
+    repo('agent-helm', { homepage: 'https://myowinthein.github.io/agent-helm/', description: 'A long API description.' }),
+    repo('new-project', { description: 'Description from GitHub.' }),
+    repo('toString', { description: 'A valid repository name.' }),
+  ]));
+  await sandbox.ready;
+  const html = sandbox.document.getElementById('grid').innerHTML;
+  assert.match(html, /<article class="card">/);
+  assert.match(html, /<h3 class="card-name">Agent Helm<\/h3>/);
+  assert.match(html, /Reusable development workflows for Claude and Codex\./);
+  assert.doesNotMatch(html, /A long API description/);
+  assert.match(html, /href="https:\/\/myowinthein.github.io\/agent-helm\/"/);
+  assert.match(html, /href="https:\/\/github.com\/myowinthein\/agent-helm"/);
+  assert.match(html, /Description from GitHub\./);
+  assert.match(html, /A valid repository name\./);
+  assert.doesNotMatch(html, /function toString/);
 });
 
 test('shows an empty state when no repos qualify', async () => {
@@ -337,7 +420,7 @@ for (const scenario of [
   test(`shows an error when ${scenario.name}`, async () => {
     const sandbox = loadScript(scenario.makeFetch());
     await sandbox.ready;
-    assert.equal(sandbox.document.getElementById('grid').innerHTML, '');
+    assert.match(sandbox.document.getElementById('grid').innerHTML, /https:\/\/github.com\/myowinthein\?tab=repositories/);
     assert.equal(sandbox.document.getElementById('project-status').textContent,
       'Could not load projects. Try again.');
     const button = sandbox.document.getElementById('load-more');
