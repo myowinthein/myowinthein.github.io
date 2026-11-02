@@ -34,6 +34,9 @@ public GitHub repositories as project cards.
   storage failures, independent profile/social loading, link safety, and empty/error states.
 - `.github/workflows/checks.yml`: dependency-free syntax/tests on pushes and pull requests,
   using Node.js 24. This reports results without gating the legacy Pages deployment.
+- `legal/privacy-policy.md`: privacy notice linked from the footer. It describes theme
+  storage, the GitHub data cache, GitHub API requests and the favicon host, so update it
+  when browser storage, network requests or third-party hosts change.
 
 ## Domain Rules
 
@@ -45,6 +48,7 @@ public GitHub repositories as project cards.
   Use the GitHub Link header's next relation to detect more pages, not batch length.
 - Every card has a Source link to its encoded GitHub repository URL; add a separate
   Project page link only for a valid HTTP(S) homepage. Never generate a Pages URL.
+  Card links open in the same tab: no `target="_blank"`; keep `rel="noopener noreferrer"`.
 - GitHub is the content source: profile name/bio/location/website and social accounts
   populate the header; repository names/descriptions/homepages populate cards.
   Do not add curated project lists, copy overrides, or duplicate profile details.
@@ -68,6 +72,8 @@ public GitHub repositories as project cards.
 - Keep the site dependency-free; do not add a build step, package.json, or dependencies
   without an explicit request.
 - Work directly on `main` under the project's configured shipping policy.
+- Keep links underlined and interactive controls at least 44px tall for mobile touch
+  targets.
 
 ## Hard Safety Rules
 
@@ -102,4 +108,4 @@ Read and follow these adopted project rules:
 - .claude/rules/safety.md
 - .claude/rules/writing.md
 
-<!-- last-reviewed: 6f0f7457fc9ce70cc520724b27cb37f795813789 -->
+<!-- last-reviewed: 10593e0c907ee6425f563243acc5ebd8ba2b928e -->
