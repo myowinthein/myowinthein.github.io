@@ -73,5 +73,6 @@ public GitHub repositories as project cards.
 Read and follow these adopted project rules:
 - .claude/rules/git.md
 - .claude/rules/safety.md
+- .claude/rules/writing.md
 
 <!-- last-reviewed: 6f0f7457fc9ce70cc520724b27cb37f795813789 -->
