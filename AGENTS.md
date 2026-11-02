@@ -6,7 +6,7 @@ Personal landing page for Myo Win Thein, hosted on GitHub Pages. Lists the owner
 public GitHub repositories as project cards.
 
 - Stack: plain HTML, CSS, vanilla JavaScript; no framework, build tool, or package manager.
-- Deployment: pushing to `main` publishes through GitHub Pages, as documented in README.md.
+- Deployment: pushing to `main` publishes through GitHub Pages.
 - Blast radius: a public personal site; deployed breakage is visible to visitors.
 
 ## Project Config
