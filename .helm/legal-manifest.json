@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "documents": [
+    {
+      "file": "legal/privacy-policy.md",
+      "generated_at": "2026-11-02",
+      "generated_at_commit": "5549af3e7b4b483ce7aa09698d781b2250268699"
+    }
+  ]
+}
