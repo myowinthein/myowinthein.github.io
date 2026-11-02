@@ -14,7 +14,7 @@ public GitHub repositories as project cards.
 - ship-method: direct
 - git-auto-commit: true
 - git-merge-strategy: squash
-- readme-style: standard
+- readme-style: custom
 
 ## Dev Commands
 
