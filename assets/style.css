@@ -73,6 +73,11 @@ a:focus-visible, button:focus-visible {
 
 .profile-links a { max-width: 100%; }
 
+.profile-links a, .card-links a { text-decoration: none; }
+
+.profile-links a:hover, .profile-links a:focus-visible,
+.card-links a:hover, .card-links a:focus-visible { text-decoration: underline; }
+
 main { width: 100%; max-width: 860px; }
 
 .visually-hidden {
@@ -154,8 +159,6 @@ main { width: 100%; max-width: 860px; }
   font-size: 12px;
   margin-top: 4px;
 }
-
-.card-links a { text-decoration: none; }
 
 .loading {
   color: var(--muted);
