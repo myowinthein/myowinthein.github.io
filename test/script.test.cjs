@@ -9,19 +9,35 @@ const vm = require('node:vm');
 // declarations (escapeHtml, safeUrl, applyTheme) become properties of the
 // sandbox, so we can test the actual shipped code with no source changes
 // and no npm/jsdom dependency.
-function loadScript(fetchImpl = () => Promise.resolve({ ok: false, status: 404 })) {
+function loadScript(
+  fetchImpl = () => Promise.resolve({ ok: false, status: 404 }),
+  { savedTheme = null, prefersDark = false, storage = new Map() } = {},
+) {
   const code = fs.readFileSync(path.join(__dirname, '../assets/script.js'), 'utf8');
+  const attributes = new Map();
+  const clickHandlers = new Map();
+  if (savedTheme !== null) storage.set('theme', savedTheme);
   const elements = {
     grid: { innerHTML: '' },
-    'theme-toggle': { addEventListener() {}, textContent: '' },
+    'theme-toggle': {
+      addEventListener(type, handler) { clickHandlers.set(type, handler); },
+      click() { clickHandlers.get('click')(); },
+      textContent: '',
+    },
   };
   const sandbox = {
     document: {
-      documentElement: { setAttribute() {}, getAttribute() { return null; } },
+      documentElement: {
+        setAttribute(name, value) { attributes.set(name, value); },
+        getAttribute(name) { return attributes.get(name) ?? null; },
+      },
       getElementById(id) { return elements[id]; },
     },
-    window: { matchMedia() { return { matches: false }; } },
-    localStorage: { getItem() { return null; }, setItem() {} },
+    window: { matchMedia() { return { matches: prefersDark }; } },
+    localStorage: {
+      getItem(key) { return storage.get(key) ?? null; },
+      setItem(key, value) { storage.set(key, value); },
+    },
     fetch: fetchImpl,
     URL,
   };
@@ -29,6 +45,39 @@ function loadScript(fetchImpl = () => Promise.resolve({ ok: false, status: 404 }
   sandbox.ready = vm.runInContext(code, sandbox);
   return sandbox;
 }
+
+for (const scenario of [
+  { name: 'uses the system light theme without a saved choice', prefersDark: false, expected: 'light' },
+  { name: 'uses the system dark theme without a saved choice', prefersDark: true, expected: 'dark' },
+  { name: 'keeps a saved light theme over a dark system preference', savedTheme: 'light', prefersDark: true, expected: 'light' },
+  { name: 'keeps a saved dark theme over a light system preference', savedTheme: 'dark', prefersDark: false, expected: 'dark' },
+]) {
+  test(scenario.name, async () => {
+    const sandbox = loadScript(undefined, scenario);
+    await sandbox.ready;
+    assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), scenario.expected);
+  });
+}
+
+test('persists theme toggles and restores the choice on reload', async () => {
+  const storage = new Map();
+  const sandbox = loadScript(undefined, { storage });
+  await sandbox.ready;
+  const root = sandbox.document.documentElement;
+  const button = sandbox.document.getElementById('theme-toggle');
+
+  assert.equal(root.getAttribute('data-theme'), 'light');
+  button.click();
+  assert.equal(root.getAttribute('data-theme'), 'dark');
+  assert.equal(storage.get('theme'), 'dark');
+  button.click();
+  assert.equal(root.getAttribute('data-theme'), 'light');
+  assert.equal(storage.get('theme'), 'light');
+
+  const reloaded = loadScript(undefined, { storage, prefersDark: true });
+  await reloaded.ready;
+  assert.equal(reloaded.document.documentElement.getAttribute('data-theme'), 'light');
+});
 
 test('escapeHtml escapes &, <, >, and "', () => {
   const { escapeHtml } = loadScript();
