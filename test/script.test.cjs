@@ -383,7 +383,7 @@ test('fetches six projects initially and appends more only when requested', asyn
   await button.click();
   assert.equal(requests.length, 2);
   assert.equal((grid.innerHTML.match(/class="card"/g) || []).length, 12);
-  assert.equal(sandbox.document.getElementById('project-status').textContent, '6 projects loaded. 12 shown.');
+  assert.equal(sandbox.document.getElementById('project-status').textContent, 'Showing 12 projects.');
   await button.click();
   assert.equal(requests.length, 3);
   assert.deepEqual(requests.map(url => url.searchParams.get('page')), ['1', '2', '3']);
@@ -394,7 +394,7 @@ test('fetches six projects initially and appends more only when requested', asyn
   const renderedNames = Array.from(html.matchAll(/class="card-name">([^<]+)<\/h3>/g), match => match[1]);
   assert.deepEqual(renderedNames, repositories.map(r => r.name));
   assert.equal(button.hidden, true);
-  assert.equal(sandbox.document.getElementById('project-status').textContent, '1 project loaded. 13 shown. All projects loaded.');
+  assert.equal(sandbox.document.getElementById('project-status').textContent, 'All 13 projects loaded.');
   await button.click();
   assert.equal(requests.length, 3);
 });
