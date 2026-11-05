@@ -107,5 +107,6 @@ Read and follow these adopted project rules:
 - .claude/rules/git.md
 - .claude/rules/safety.md
 - .claude/rules/writing.md
+- .claude/rules/design.md
 
 <!-- last-reviewed: 10593e0c907ee6425f563243acc5ebd8ba2b928e -->
