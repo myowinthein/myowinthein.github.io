@@ -42,8 +42,8 @@ function loadScript(
   elements['profile-name'].textContent = 'myowinthein';
   elements['profile-bio'].hidden = true;
   elements['profile-location'].hidden = true;
-  elements['profile-links'].innerHTML = '<a href="https://github.com/myowinthein">GitHub</a>';
-  elements.grid.innerHTML = '<p><a href="https://github.com/myowinthein?tab=repositories">Browse public repositories</a></p>';
+  elements['profile-links'].innerHTML = '<a class="external-link" href="https://github.com/myowinthein">GitHub</a>';
+  elements.grid.innerHTML = '<p><a class="external-link" href="https://github.com/myowinthein?tab=repositories">Browse public repositories</a></p>';
   const sandbox = {
     document: {
       title: 'myowinthein | Public projects',
@@ -630,7 +630,7 @@ test('lists owned public projects without Pages or a homepage, excluding forks a
   assert.match(html, /archived-project/);
   assert.doesNotMatch(html, /private-project|fork-project|Myowinthein.github.io|other-owner/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/plain-project"/);
-  assert.match(html, /Source →/);
+  assert.match(html, /Source<\/a>/);
 });
 
 test('fetches six projects initially and appends more only when requested', async () => {
@@ -803,7 +803,7 @@ test('uses safe homepages and escapes API text and URL attributes', async () => 
   await sandbox.document.getElementById('load-more').click();
   const html = sandbox.document.getElementById('grid').innerHTML;
   assert.match(html, /href="https:\/\/example.com\/\?a=1&amp;b=2"/);
-  assert.match(html, /Project page →/);
+  assert.match(html, /Project page<\/a>/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/unsafe"/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/invalid"/);
   assert.match(html, /&lt;script&gt;/);

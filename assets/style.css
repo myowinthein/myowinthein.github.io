@@ -58,6 +58,18 @@ header .role { color: var(--text); margin-top: 12px; }
 
 a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
 
+.external-link::after {
+  content: "";
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.875em;
+  height: 0.875em;
+  margin-inline-start: 0.25em;
+  vertical-align: -0.1em;
+  background-color: currentColor;
+  mask: url("icons/external-link.svg") center / contain no-repeat;
+}
+
 a:focus-visible, button:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 4px;
