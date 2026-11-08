@@ -17,8 +17,34 @@ const ELEMENT_IDS = [
 function element() {
   const attributes = new Map();
   const handlers = new Map();
+  let html = '';
+  const children = [];
+  function appendCards(markup) {
+    for (const match of markup.matchAll(/<article\b[^>]*>[\s\S]*?<\/article>/g)) {
+      const child = {
+        remove() {
+          html = html.replace(match[0], '');
+          children.splice(children.indexOf(child), 1);
+        },
+      };
+      children.push(child);
+    }
+  }
   return {
-    innerHTML: '', textContent: '', hidden: false, disabled: false,
+    get innerHTML() { return html; },
+    set innerHTML(value) {
+      html = value;
+      children.length = 0;
+      appendCards(value);
+    },
+    children,
+    get lastElementChild() { return children.at(-1); },
+    insertAdjacentHTML(position, markup) {
+      assert.equal(position, 'beforeend');
+      html += markup;
+      appendCards(markup);
+    },
+    textContent: '', hidden: false, disabled: false,
     setAttribute(name, value) { attributes.set(name, value); },
     getAttribute(name) { return attributes.get(name) ?? null; },
     addEventListener(type, handler) { handlers.set(type, handler); },
@@ -314,13 +340,16 @@ test('replaces a failed cached later-page preview while preserving earlier cards
   }, { storage, now: CACHE_TEST_TIME + 5 * 60 * 1000 });
   await nextVisit.ready;
   const get = id => nextVisit.document.getElementById(id);
+  const initialCards = [...get('grid').children];
   await get('load-more').click();
   assert.equal(cardCount(get('grid').innerHTML), 12);
+  assert.deepEqual(get('grid').children.slice(0, 6), initialCards);
   assert.match(get('project-status').textContent, /Showing cached projects/);
   recover = true;
   await get('load-more').click();
   assert.deepEqual(pages, ['1', '2', '2']);
   assert.equal(cardCount(get('grid').innerHTML), 8);
+  assert.deepEqual(get('grid').children.slice(0, 6), initialCards);
   assert.match(get('grid').innerHTML, /cached-0/);
   assert.match(get('grid').innerHTML, /updated-6/);
   assert.doesNotMatch(get('grid').innerHTML, />cached-6</);
@@ -642,12 +671,14 @@ test('fetches six projects initially and appends more only when requested', asyn
   const button = sandbox.document.getElementById('load-more');
   assert.equal(requests.length, 1);
   assert.equal(cardCount(grid.innerHTML), 6);
+  const initialCards = [...grid.children];
   assert.doesNotMatch(grid.innerHTML, /project-6/);
   assert.equal(button.hidden, false);
 
   await button.click();
   assert.equal(requests.length, 2);
   assert.equal(cardCount(grid.innerHTML), 12);
+  assert.deepEqual(grid.children.slice(0, 6), initialCards);
   assert.equal(sandbox.document.getElementById('project-status').textContent, 'Showing 12 projects.');
   await button.click();
   assert.equal(requests.length, 3);
@@ -656,6 +687,7 @@ test('fetches six projects initially and appends more only when requested', asyn
   assert.ok(requests.every(url => url.searchParams.get('per_page') === '6'));
   const html = grid.innerHTML;
   assert.equal(cardCount(html), 13);
+  assert.deepEqual(grid.children.slice(0, 6), initialCards);
   const renderedNames = cardNames(html);
   assert.deepEqual(renderedNames, repositories.map(r => r.name));
   assert.equal(button.hidden, true);
@@ -719,15 +751,18 @@ test('keeps displayed cards after a later failure and retries the same API page'
   await sandbox.ready;
   const grid = sandbox.document.getElementById('grid');
   const initialCards = grid.innerHTML;
+  const initialNodes = [...grid.children];
   const button = sandbox.document.getElementById('load-more');
   await button.click();
   assert.equal(grid.innerHTML, initialCards);
+  assert.deepEqual(grid.children, initialNodes);
   assert.equal(sandbox.document.getElementById('project-status').textContent,
     'Could not load more projects. Try again.');
   assert.equal(button.disabled, false);
   await button.click();
   assert.deepEqual(requests, ['1', '2', '2']);
   assert.equal(cardCount(grid.innerHTML), 4);
+  assert.deepEqual(grid.children.slice(0, 3), initialNodes);
   assert.equal(button.hidden, true);
 });
 

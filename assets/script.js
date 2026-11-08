@@ -223,6 +223,16 @@ function projectCards(projects) {
   }).join('');
 }
 
+function showProjectBatch(projects) {
+  // Remove only unconfirmed previews; keep loaded cards and their focus intact.
+  if (displayedProjects.length === 0) {
+    grid.innerHTML = '';
+  } else {
+    while (grid.children.length > displayedProjects.length) grid.lastElementChild.remove();
+  }
+  if (projects.length) grid.insertAdjacentHTML('beforeend', projectCards(projects));
+}
+
 async function loadMoreProjects() {
   if (loading || !hasMore) return;
   loading = true;
@@ -237,12 +247,12 @@ async function loadMoreProjects() {
     const projects = await fetchNextProjects(cached => {
       previewProjects = newProjects(cached.data, new Set(seenProjects));
       if (previewProjects.length) {
-        grid.innerHTML = projectCards([...displayedProjects, ...previewProjects]);
+        showProjectBatch(previewProjects);
         projectStatus.textContent = 'Showing cached projects…';
       }
     });
+    showProjectBatch(projects);
     displayedProjects.push(...projects);
-    grid.innerHTML = projectCards(displayedProjects);
     const count = displayedProjects.length;
     if (count === 0) {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
@@ -257,7 +267,8 @@ async function loadMoreProjects() {
     if (previewProjects.length) {
       projectStatus.textContent = 'Showing cached projects. Could not refresh. Try again.';
     } else {
-      grid.innerHTML = displayedProjects.length ? projectCards(displayedProjects) : fallbackProjects;
+      if (displayedProjects.length) showProjectBatch([]);
+      else grid.innerHTML = fallbackProjects;
       projectStatus.textContent = displayedProjects.length
         ? 'Could not load more projects. Try again.'
         : 'Could not load projects. Try again.';
