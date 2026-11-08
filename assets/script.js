@@ -132,6 +132,8 @@ function renderProfile(profile) {
   document.getElementById('page-description').setAttribute('content', description);
   document.getElementById('page-og-title').setAttribute('content', document.title);
   document.getElementById('page-og-description').setAttribute('content', description);
+  document.getElementById('page-twitter-title').setAttribute('content', document.title);
+  document.getElementById('page-twitter-description').setAttribute('content', description);
 }
 
 async function loadProfile() {

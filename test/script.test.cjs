@@ -12,6 +12,7 @@ const vm = require('node:vm');
 const ELEMENT_IDS = [
   'grid', 'theme-toggle', 'load-more', 'project-status', 'profile-name', 'profile-bio',
   'profile-location', 'profile-links', 'page-description', 'page-og-title', 'page-og-description',
+  'page-twitter-title', 'page-twitter-description',
 ];
 
 function element() {
@@ -503,6 +504,8 @@ test('loads the introduction, metadata, website, and social links from public Gi
   assert.equal(get('page-description').getAttribute('content'), 'Current GitHub bio.');
   assert.equal(get('page-og-title').getAttribute('content'), sandbox.document.title);
   assert.equal(get('page-og-description').getAttribute('content'), 'Current GitHub bio.');
+  assert.equal(get('page-twitter-title').getAttribute('content'), sandbox.document.title);
+  assert.equal(get('page-twitter-description').getAttribute('content'), 'Current GitHub bio.');
   const links = get('profile-links').innerHTML;
   assert.match(links, /href="https:\/\/example.com\/">Website/);
   assert.match(links, /href="https:\/\/github.com\/myowinthein">GitHub/);
