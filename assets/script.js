@@ -1,4 +1,4 @@
-// Theme — auto-detect system preference, allow manual override
+// The head script selects the initial theme; this script wires up the toggle.
 const root = document.documentElement;
 const btn  = document.getElementById('theme-toggle');
 
@@ -10,14 +10,7 @@ function applyTheme(dark) {
   btn.title = label;
 }
 
-let saved = null;
-try {
-  saved = localStorage.getItem('theme');
-} catch {
-  // Theme persistence is optional when browser storage is unavailable.
-}
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-applyTheme(saved === 'dark' || (saved !== 'light' && prefersDark));
+applyTheme(root.getAttribute('data-theme') === 'dark');
 
 btn.addEventListener('click', () => {
   const isDark = root.getAttribute('data-theme') === 'dark';
@@ -36,6 +29,95 @@ const USER_API = `https://api.github.com/users/${GITHUB_USER}`;
 const GITHUB_PROFILE = `https://github.com/${GITHUB_USER}`;
 const CACHE_PREFIX = `github-directory:v1:${GITHUB_USER}:`;
 const CACHE_TTL = 5 * 60 * 1000;
+const RATE_LIMIT_KEY = `${CACHE_PREFIX}retry-after`;
+let rateLimitUntil = 0;
+const githubRetries = new Map();
+let githubRetryTimer;
+let retryingGitHub = false;
+
+function scheduleGitHubRetries() {
+  if (githubRetryTimer) clearTimeout(githubRetryTimer);
+  if (retryingGitHub) return;
+  const blockedUntil = githubRetryAt();
+  const deadlines = [...githubRetries.values()].map(job => Math.max(job.retryAt, blockedUntil));
+  if (blockedUntil) deadlines.push(blockedUntil);
+  if (!deadlines.length) return;
+  githubRetryTimer = setTimeout(retryGitHubRequests,
+    Math.min(Math.max(0, Math.min(...deadlines) - Date.now()), 2_147_483_647));
+}
+
+function queueGitHubRetry(url, validate, onRefresh, error, attempts = 0) {
+  // Missing/forbidden resources are not transient failures. Retry temporary
+  // failures at most three times, respecting a shared rate-limit deadline.
+  if (attempts >= 3 || (error.status >= 400 && error.status < 500 && !(error instanceof GitHubRateLimitError))) return;
+  githubRetries.set(url, {
+    validate, onRefresh, attempts,
+    retryAt: Math.max(error.retryAt || Date.now() + 60_000, attempts ? Date.now() + 60_000 * 2 ** attempts : 0),
+  });
+  scheduleGitHubRetries();
+}
+
+async function retryGitHubRequests() {
+  retryingGitHub = true;
+  for (const [url, job] of [...githubRetries]) {
+    if (job.retryAt > Date.now() || githubRetryAt()) continue;
+    githubRetries.delete(url);
+    try {
+      const cached = readGitHubCache(url, job.validate);
+      const result = cached && Date.now() - cached.savedAt < CACHE_TTL
+        ? cached : await requestGitHub(url, job.validate);
+      await job.onRefresh(result);
+    } catch (error) {
+      queueGitHubRetry(url, job.validate, job.onRefresh, error, job.attempts + 1);
+    }
+  }
+  retryingGitHub = false;
+  updateProjectControls();
+  scheduleGitHubRetries();
+}
+
+class GitHubRateLimitError extends Error {
+  constructor(retryAt) {
+    super('GitHub request limit reached');
+    this.retryAt = retryAt;
+  }
+}
+
+function githubRetryAt() {
+  try {
+    const saved = Number(localStorage.getItem(RATE_LIMIT_KEY));
+    if (Number.isFinite(saved) && saved > Date.now() && saved <= Date.now() + 24 * 60 * 60 * 1000) {
+      rateLimitUntil = Math.max(rateLimitUntil, saved);
+    }
+  } catch {
+    // The current page still respects the limit when storage is unavailable.
+  }
+  return rateLimitUntil > Date.now() ? rateLimitUntil : 0;
+}
+
+function rememberGitHubLimit(retryAt) {
+  rateLimitUntil = Math.max(githubRetryAt(), retryAt);
+  try {
+    // Store only a retry deadline, never an error response or a fresh cache timestamp.
+    localStorage.setItem(RATE_LIMIT_KEY, String(rateLimitUntil));
+  } catch {
+    // In-memory backoff remains available.
+  }
+  return rateLimitUntil;
+}
+
+function responseRetryAt(response) {
+  const get = name => response.headers?.get(name);
+  const exhausted = get('X-RateLimit-Remaining') === '0';
+  const limited = response.status === 403 || response.status === 429;
+  const retryAfter = get('Retry-After');
+  const delay = retryAfter && (/^\d+$/.test(retryAfter)
+    ? Date.now() + Number(retryAfter) * 1000 : Date.parse(retryAfter));
+  const reset = exhausted ? Number(get('X-RateLimit-Reset')) * 1000 : 0;
+  if (!exhausted && !(limited && (response.status === 429 || Number.isFinite(delay)))) return 0;
+  const deadlines = [delay, reset].filter(value => Number.isFinite(value) && value > Date.now());
+  return deadlines.length ? Math.max(...deadlines) + 1000 : Date.now() + 60 * 1000;
+}
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -65,20 +147,63 @@ function isRepositoryPage(data) {
     (repo.description == null || typeof repo.description === 'string'));
 }
 
-async function cachedGitHub(url, validate, onStale = () => {}) {
-  let cached;
+function isReleaseData(data) {
+  return isProfileData(data) && typeof data.tag_name === 'string' && Boolean(data.tag_name.trim()) &&
+    typeof data.html_url === 'string' && Boolean(safeUrl(data.html_url, '')) &&
+    data.draft === false && data.prerelease === false;
+}
+
+function isLicenseData(data) {
+  return isProfileData(data) && typeof data.html_url === 'string' && Boolean(safeUrl(data.html_url, '')) &&
+    isProfileData(data.license) && typeof data.license.spdx_id === 'string' && Boolean(data.license.spdx_id.trim());
+}
+
+function readGitHubCache(url, validate) {
   try {
     const entry = JSON.parse(localStorage.getItem(CACHE_PREFIX + url));
     if (entry && Number.isFinite(entry.savedAt) && entry.savedAt >= 0 && entry.savedAt <= Date.now() &&
-        typeof entry.link === 'string' && validate(entry.data)) cached = entry;
+        typeof entry.link === 'string' && validate(entry.data)) return entry;
   } catch {
     // Corrupt or inaccessible storage must not prevent a live request.
   }
+}
+
+async function cachedGitHub(url, validate, onStale = () => {}, onRefresh = onStale) {
+  const cached = readGitHubCache(url, validate);
   if (cached && Date.now() - cached.savedAt < CACHE_TTL) return cached;
   if (cached) onStale(cached);
+  try {
+    return await requestGitHub(url, validate);
+  } catch (error) {
+    queueGitHubRetry(url, validate, onRefresh, error);
+    if (cached) return { ...cached, stale: true };
+    throw error;
+  }
+}
+
+async function requestGitHub(url, validate) {
+  const blockedUntil = githubRetryAt();
+  if (blockedUntil) throw new GitHubRateLimitError(blockedUntil);
 
   const response = await fetch(url);
-  if (!response.ok) throw new Error(response.status);
+  let retryAt = responseRetryAt(response);
+  if (!response.ok) {
+    if (response.status === 403 && !retryAt) {
+      try {
+        const error = await response.json();
+        if (typeof error?.message === 'string' && /rate limit/i.test(error.message)) {
+          retryAt = Date.now() + 60 * 1000;
+        }
+      } catch {
+        // An ordinary HTTP error does not establish a rate limit.
+      }
+    }
+    if (retryAt) throw new GitHubRateLimitError(rememberGitHubLimit(retryAt));
+    const error = new Error(response.status);
+    error.status = response.status;
+    throw error;
+  }
+  if (retryAt) rememberGitHubLimit(retryAt);
   const data = await response.json();
   if (!validate(data)) throw new Error('Invalid GitHub response');
   const entry = { data, link: response.headers.get('Link') || '', savedAt: Date.now() };
@@ -92,6 +217,8 @@ async function cachedGitHub(url, validate, onStale = () => {}) {
 
 let profileWebsite = '';
 let socialAccounts = [];
+const profileAvatar = document.getElementById('profile-avatar');
+profileAvatar.addEventListener('error', () => { profileAvatar.hidden = true; });
 
 function renderProfileLinks() {
   const links = [{ label: 'GitHub', url: GITHUB_PROFILE }];
@@ -101,7 +228,7 @@ function renderProfileLinks() {
     const url = safeUrl(account.url, '');
     if (!url) continue;
     const hostname = new URL(url).hostname.replace(/^www\./, '');
-    const provider = typeof account.provider === 'string' ? account.provider : '';
+    const provider = typeof account.provider === 'string' ? account.provider.trim() : '';
     const label = provider === 'linkedin' ? 'LinkedIn'
       : hostname === 'medium.com' || hostname.endsWith('.medium.com') ? 'Medium'
       : provider && provider !== 'generic' ? provider : hostname;
@@ -116,14 +243,20 @@ function renderProfileLinks() {
 }
 
 function renderProfile(profile) {
-  const name = typeof profile.name === 'string' && profile.name.trim() ? profile.name : GITHUB_USER;
+  const avatarUrl = typeof profile.avatar_url === 'string' ? safeUrl(profile.avatar_url, '') : '';
+  if (avatarUrl) profileAvatar.setAttribute('src', avatarUrl);
+  profileAvatar.hidden = !avatarUrl;
+  const name = typeof profile.name === 'string' && profile.name.trim() ? profile.name.trim() : GITHUB_USER;
   document.getElementById('profile-name').textContent = name;
-  for (const field of ['bio', 'location']) {
+  const detailFields = ['bio', 'company', 'location'];
+  for (const field of detailFields) {
     const element = document.getElementById(`profile-${field}`);
     const value = typeof profile[field] === 'string' ? profile[field].trim() : '';
     element.textContent = value;
     element.hidden = !value;
   }
+  document.getElementById('profile-details').hidden = detailFields.every(
+    field => document.getElementById(`profile-${field}`).hidden);
   profileWebsite = typeof profile.blog === 'string' ? safeUrl(profile.blog, '') : '';
   renderProfileLinks();
   document.title = `${name} | Public projects`;
@@ -154,7 +287,7 @@ async function loadSocialLinks() {
       const response = await cachedGitHub(`${USER_API}/social_accounts?per_page=100&page=${page}`, Array.isArray, cached => {
         socialAccounts = [...accounts, ...cached.data];
         renderProfileLinks();
-      });
+      }, loadSocialLinks);
       accounts.push(...response.data);
       socialAccounts = [...accounts];
       renderProfileLinks();
@@ -177,6 +310,31 @@ let nextPage = 1;
 let hasMore = true;
 let loading = false;
 const displayedProjects = [];
+let projectsBlocked = false;
+
+function projectPageUrl(page) {
+  return `${USER_API}/repos?type=owner&per_page=${PAGE_SIZE}&sort=updated&page=${page}`;
+}
+
+function updateProjectControls() {
+  const canUseCache = Boolean(readGitHubCache(projectPageUrl(nextPage), isRepositoryPage));
+  const unavailable = (projectsBlocked || githubRetryAt()) && !canUseCache;
+  loadMore.setAttribute('aria-disabled', String(loading));
+  loadMore.hidden = !hasMore || Boolean(unavailable);
+}
+
+async function refreshedProjectPage(page, response) {
+  if (nextPage === page && !loading) {
+    projectsBlocked = false;
+    await loadMoreProjects();
+  } else {
+    // Refresh stored pages without replacing the cards a visitor is browsing.
+    const visible = eligibleProjects(response.data).filter(project =>
+      displayedProjects.some(shown => shown.name.toLowerCase() === project.name.toLowerCase()));
+    await Promise.allSettled(visible.flatMap(project => [loadProjectRelease(project), loadProjectLicense(project)]));
+  }
+  updateProjectControls();
+}
 
 function eligibleProjects(repos) {
   return repos.filter(r =>
@@ -195,31 +353,116 @@ function newProjects(repos, seen) {
 
 async function fetchNextProjects(onStale) {
   let projects = [];
+  let stale = false;
   do {
-    const res = await cachedGitHub(`${USER_API}/repos?type=owner&per_page=${PAGE_SIZE}&sort=updated&page=${nextPage}`, isRepositoryPage, onStale);
+    const page = nextPage;
+    const res = await cachedGitHub(projectPageUrl(page), isRepositoryPage, onStale,
+      response => refreshedProjectPage(page, response));
+    stale = Boolean(res.stale);
     projects = newProjects(res.data, seenProjects);
     nextPage += 1;
     hasMore = hasNextPage(res);
     // Skip fully excluded pages, but leave later nonempty pages for Load more.
   } while (projects.length === 0 && hasMore);
 
-  return projects;
+  return { projects, stale };
+}
+
+function releaseElementId(name) {
+  return `project-release-${encodeURIComponent(name)}`;
+}
+
+function licenseElementId(name) {
+  return `project-license-${encodeURIComponent(name)}`;
+}
+
+function renderProjectLink(id, text, url, accessibleLabel) {
+  const slot = document.getElementById(id);
+  if (!slot) return;
+  let link = slot.firstElementChild;
+  if (!link) {
+    link = document.createElement('a');
+    link.setAttribute('class', 'external-link');
+    link.setAttribute('rel', 'noopener noreferrer');
+    const label = document.createElement('span');
+    label.setAttribute('class', 'link-label');
+    link.append(label);
+    slot.append(link);
+  }
+  link.setAttribute('href', safeUrl(url, ''));
+  link.setAttribute('aria-label', accessibleLabel);
+  link.firstElementChild.textContent = text;
+  slot.hidden = false;
+}
+
+function projectApi(project) {
+  return `https://api.github.com/repos/${GITHUB_USER}/${encodeURIComponent(project.name)}`;
+}
+
+function renderProjectRelease(project, release) {
+  renderProjectLink(releaseElementId(project.name), release.tag_name.trim(),
+    release.html_url, `Release ${release.tag_name.trim()} for ${project.name}`);
+}
+
+function renderProjectLicense(project, data) {
+  const label = data.license.spdx_id.trim() === 'NOASSERTION' ? 'License' : data.license.spdx_id.trim();
+  const accessibleLabel = label === 'License' ? `License for ${project.name}` : `${label} license for ${project.name}`;
+  renderProjectLink(licenseElementId(project.name), label, data.html_url, accessibleLabel);
+}
+
+function renderCachedProjectDetails(projects) {
+  for (const project of projects) {
+    const release = readGitHubCache(`${projectApi(project)}/releases/latest`, isReleaseData);
+    if (release) renderProjectRelease(project, release.data);
+    const license = isProfileData(project.license) && readGitHubCache(`${projectApi(project)}/license`, isLicenseData);
+    if (license) renderProjectLicense(project, license.data);
+  }
+}
+
+async function loadProjectRelease(project) {
+  const render = release => renderProjectRelease(project, release);
+  try {
+    const response = await cachedGitHub(
+      `${projectApi(project)}/releases/latest`,
+      isReleaseData, cached => render(cached.data));
+    render(response.data);
+  } catch {
+    // A missing release or failed request must not interrupt project browsing.
+  }
+}
+
+async function loadProjectLicense(project) {
+  if (!isProfileData(project.license)) return;
+  const render = data => renderProjectLicense(project, data);
+  try {
+    const response = await cachedGitHub(
+      `${projectApi(project)}/license`,
+      isLicenseData, cached => render(cached.data));
+    render(response.data);
+  } catch {
+    // A missing or unavailable license leaves the card's other links usable.
+  }
 }
 
 function projectCards(projects) {
   return projects.map(r => {
     const repoUrl = `https://github.com/${GITHUB_USER}/${encodeURIComponent(r.name)}`;
     const url  = safeUrl(r.homepage, repoUrl);
-    const desc = escapeHtml(r.description || '');
+    const desc = escapeHtml(typeof r.description === 'string' ? r.description.trim() : '');
     const name = escapeHtml(r.name);
     const projectLink = url === repoUrl ? '' : `
-          <a class="external-link" href="${escapeHtml(url)}" rel="noopener noreferrer" aria-label="Project page for ${name}"><span class="link-label">Project page</span></a>`;
+          <a class="external-link" href="${escapeHtml(url)}" rel="noopener noreferrer" aria-label="Website for ${name}"><span class="link-label">Website</span></a>`;
     return `
       <article class="card">
-        <h3 class="card-name">${name}</h3>
-        <p class="card-desc">${desc}</p>
+        <div class="card-heading">
+          <h3 class="card-name">${name}</h3>
+          <span class="card-release" id="${releaseElementId(r.name)}" hidden></span>
+          ${r.archived === true ? '<span class="card-status">Archived</span>' : ''}
+        </div>
+        ${desc ? `<p class="card-desc">${desc}</p>` : ''}
         <div class="card-links">${projectLink}
           <a class="external-link" href="${escapeHtml(repoUrl)}" rel="noopener noreferrer" aria-label="Source for ${name}"><span class="link-label">Source</span></a>
+          <span class="card-license" id="${licenseElementId(r.name)}" hidden></span>
         </div>
       </article>`;
   }).join('');
@@ -236,52 +479,67 @@ function showProjectBatch(projects) {
 }
 
 async function loadMoreProjects() {
-  if (loading || !hasMore) return;
+  if (loading || !hasMore || (loadMore.hidden && projectsBlocked)) return;
   loading = true;
-  loadMore.disabled = true;
-  loadMore.textContent = 'Loading…';
+  loadMore.setAttribute('aria-disabled', 'true');
+  loadMore.setAttribute('aria-busy', 'true');
+  loadMore.setAttribute('aria-label', 'Loading more projects');
   grid.setAttribute('aria-busy', 'true');
   if (displayedProjects.length === 0) grid.innerHTML = '<p class="loading">Loading projects…</p>';
-  projectStatus.textContent = displayedProjects.length ? 'Loading more projects…' : '';
   let previewProjects = [];
+  let detailRequests = [];
+  let firstNewCard;
 
   try {
-    const projects = await fetchNextProjects(cached => {
+    const { projects, stale } = await fetchNextProjects(cached => {
       previewProjects = newProjects(cached.data, new Set(seenProjects));
       if (previewProjects.length) {
         showProjectBatch(previewProjects);
-        projectStatus.textContent = 'Showing cached projects…';
+        renderCachedProjectDetails(previewProjects);
       }
     });
     showProjectBatch(projects);
+    if (projects.length) firstNewCard = grid.children[displayedProjects.length];
     displayedProjects.push(...projects);
+    projectsBlocked = false;
+    // A cached snapshot can be browsed without spending requests on its details.
+    if (stale) renderCachedProjectDetails(projects);
+    else detailRequests = projects.flatMap(project => [loadProjectRelease(project), loadProjectLicense(project)]);
     const count = displayedProjects.length;
     if (count === 0) {
       grid.innerHTML = '<p class="loading">No projects found.</p>';
     }
-    projectStatus.textContent = count
-      ? hasMore
-        ? `Showing ${count} ${count === 1 ? 'project' : 'projects'}.`
-        : `All ${count} ${count === 1 ? 'project' : 'projects'} loaded.`
+    projectStatus.textContent = count && !hasMore
+      ? `All ${count} ${count === 1 ? 'project' : 'projects'} loaded.`
       : '';
     loadMore.textContent = 'Load more';
   } catch {
-    if (previewProjects.length) {
-      projectStatus.textContent = 'Showing cached projects. Could not refresh. Try again.';
-    } else {
-      if (displayedProjects.length) showProjectBatch([]);
-      else grid.innerHTML = fallbackProjects;
-      projectStatus.textContent = displayedProjects.length
-        ? 'Could not load more projects. Try again.'
-        : 'Could not load projects. Try again.';
-    }
-    loadMore.textContent = 'Try again';
+    if (displayedProjects.length) showProjectBatch([]);
+    else grid.innerHTML = fallbackProjects;
+    projectStatus.textContent = '';
+    projectsBlocked = true;
   } finally {
     loading = false;
-    loadMore.disabled = false;
-    loadMore.hidden = !hasMore;
+    const hadButtonFocus = document.activeElement === loadMore;
+    loadMore.textContent = 'Load more';
+    loadMore.setAttribute('aria-disabled', 'false');
+    loadMore.setAttribute('aria-busy', 'false');
+    loadMore.setAttribute('aria-label', loadMore.textContent);
     grid.setAttribute('aria-busy', 'false');
+    updateProjectControls();
+    // Continue into new content without stealing focus if the user moved away.
+    if (hadButtonFocus) {
+      const target = firstNewCard?.querySelector('.card-name') || (loadMore.hidden
+        ? !hasMore ? projectStatus : grid.children[displayedProjects.length - 1]?.querySelector('.card-name') || grid
+        : null);
+      if (target) {
+        target.setAttribute('tabindex', '-1');
+        target.focus();
+      }
+    }
+    scheduleGitHubRetries();
   }
+  await Promise.allSettled(detailRequests);
 }
 
 loadMore.addEventListener('click', loadMoreProjects);

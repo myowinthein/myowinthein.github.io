@@ -18,6 +18,7 @@
   <meta name="twitter:image:alt" content="GitHub avatar for myowinthein.">
   <link rel="canonical" href="https://myowinthein.github.io/">
   <link rel="icon" type="image/svg+xml" href="https://myowin.dev/favicon.svg">
+  <script src="assets/theme.js"></script>
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -25,9 +26,13 @@
 <button class="theme-toggle" id="theme-toggle" type="button" title="Switch to dark theme" aria-label="Switch to dark theme">☾</button>
 
 <header>
+  <img class="profile-avatar" id="profile-avatar" width="72" height="72" alt="" referrerpolicy="no-referrer" hidden>
   <h1 id="profile-name">myowinthein</h1>
-  <p class="role" id="profile-bio" hidden></p>
-  <p id="profile-location" hidden></p>
+  <div class="profile-details" id="profile-details" hidden>
+    <p class="role" id="profile-bio" hidden></p>
+    <p id="profile-company" hidden></p>
+    <p id="profile-location" hidden></p>
+  </div>
   <nav class="profile-links" id="profile-links" aria-label="Profile links">
     <a class="external-link" href="https://github.com/myowinthein"><span class="link-label">GitHub</span></a>
   </nav>
@@ -42,13 +47,12 @@
 
     <div class="project-controls">
       <p class="loading" id="project-status" role="status" aria-atomic="true"></p>
-      <button class="load-more" id="load-more" type="button" aria-controls="grid" hidden>Load more</button>
+      <button class="load-more" id="load-more" type="button" aria-controls="grid" aria-describedby="project-status" hidden>Load more</button>
     </div>
   </section>
 </main>
 
 <footer>
-  <a class="external-link" href="https://github.com/myowinthein"><span class="link-label">GitHub</span></a>
   <a href="https://myowinthein.github.io/legal/privacy-policy.html"><span class="link-label">Privacy notice</span></a>
 </footer>
 

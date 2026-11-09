@@ -21,12 +21,14 @@ public GitHub repositories as project cards.
 - Preview: open `index.html` directly in a browser; no install or local server required.
 - Tests: `node --test test/script.test.cjs` with a Node.js version supporting `node:test`.
 - JavaScript syntax: `node --check assets/script.js`.
+- Initial-theme syntax: `node --check assets/theme.js`.
 - Tests use Node's built-in VM, DOM stubs, and mocked fetch responses; no npm dependencies.
 
 ## Architecture Pointers
 
 - `index.html`: generic account fallback, profile placeholders, accessible shell, and project fallback.
-- `assets/script.js`: theme initialization/toggle, public profile/social loading, and
+- `assets/theme.js`: applies the saved or system theme in the head before the stylesheet and body render.
+- `assets/script.js`: theme toggle, public profile/social loading, and
   on-demand GitHub repository fetch/filter/render.
 - `assets/style.css`: responsive cards and theme variables; dark overrides use
   `[data-theme="dark"]` on `<html>`.
@@ -47,25 +49,47 @@ public GitHub repositories as project cards.
   to 6. Leave short nonempty batches as they are; skip only fully excluded pages.
   Use the GitHub Link header's next relation to detect more pages, not batch length.
 - Every card has a Source link to its encoded GitHub repository URL; add a separate
-  Project page link only for a valid HTTP(S) homepage. Never generate a Pages URL.
+  Website link only for a valid HTTP(S) homepage. Never generate a Pages URL.
   Card links open in the same tab: no `target="_blank"`; keep `rel="noopener noreferrer"`.
-- GitHub is the content source: profile name/bio/location/website and social accounts
-  populate the header; repository names/descriptions/homepages populate cards.
+- GitHub is the content source: profile avatar/name/bio/company/location/website and
+  social accounts populate the header; repository names/descriptions/homepages,
+  archived status, latest full release tags, and license links populate cards.
   Do not add curated project lists, copy overrides, or duplicate profile details.
 - Profile, social-account, and repository requests run independently. Keep generic
   static fallbacks; hide empty optional fields and deduplicate validated links.
   Refresh data on page load without requiring a site commit or deployment, subject
   to the five-minute response cache.
+- Latest-release and license requests enrich only confirmed displayed projects, independently
+  of repository loading. Missing or failed releases leave no empty version row;
+  successful responses use the same five-minute cache. Update only each release
+  or license slot so incoming data preserves existing card nodes and keyboard focus.
+- Add a muted license link after Source only when a repository advertises a license
+  and its license endpoint returns a valid file URL. Use its SPDX identifier, or
+  License for NOASSERTION. Do not guess a filename, branch, or license from prose.
+- Show an Archived badge in the title row only for an explicit true value.
 - Cache successful public API responses and Link metadata in localStorage under
   `github-directory:v1:myowinthein:` plus the full request URL. Fresh entries avoid
   API calls; expired entries preview content while refreshing and survive errors.
   Validate cached data/timestamps; blocked, full, or corrupt storage must not break
   live loading. Never cache errors or update a cache timestamp on a failed request.
-- Cached project previews do not advance pagination or mark repos seen until a
-  successful refresh. Retry must replace the preview without duplicate cards.
+- Respect GitHub's rate-limit reset and Retry-After headers across page loads;
+  store only the retry deadline separately from successful response entries.
+  Keep cache/rate-limit failures out of the visible UI: no warning or Try again
+  button. Retry requested resources quietly after reset; temporary failures get
+  at most three background retries with increasing delays, not ongoing polling.
+- On refresh failure, use validated cached pages even beyond five minutes and
+  retain their release/license details without new detail requests. Cached browsing
+  can advance using saved Link metadata without renewing cache timestamps. Load more
+  stays available for cached batches during rate limits; hide it when the next batch
+  needs a blocked request. Keep only the final loaded count visible.
+- Background recovery updates stored pages while preserving the cards being browsed;
+  the next visit uses those refreshed pages. Profile/social/details can update in place.
+  Resume a previously requested uncached batch after recovery without fetching unrequested pages.
 - Theme initialization uses the saved `localStorage.theme` choice when present,
   otherwise the system preference. Ignore invalid stored values and tolerate denied
   storage reads/writes so project loading and visible theme changes still work.
+  Keep the initial-theme script synchronous before the stylesheet; root `color-scheme`
+  follows the selected theme for browser-drawn UI.
 
 ## Behavior Rules
 
@@ -88,8 +112,9 @@ public GitHub repositories as project cards.
 
 - Ownership plus non-fork status is the implemented approximation of "created by the
   user"; the listing does not verify who originally created a transferred repository.
-- A failed API request leaves displayed cards intact. Try again
-  retries the failed page. Requests are unauthenticated and subject to GitHub rate limits.
+- A failed API request leaves displayed cards or the GitHub browsing fallback intact.
+  Requests are unauthenticated and subject to GitHub rate limits; background retries
+  run only while the page is open and stop after their retry budget.
 - The privacy footer uses the published absolute URL so it works in the plain local
   preview as well as Pages; the local Python server does not render Markdown routes.
 - Profile/social requests are also unauthenticated and share the GitHub API rate

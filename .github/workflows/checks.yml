@@ -20,6 +20,8 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - name: Check JavaScript syntax
-        run: node --check assets/script.js
+        run: |
+          node --check assets/theme.js
+          node --check assets/script.js
       - name: Run tests
         run: node --test test/script.test.cjs
