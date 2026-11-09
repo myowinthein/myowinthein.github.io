@@ -69,8 +69,8 @@ function loadScript(
   elements['profile-name'].textContent = 'myowinthein';
   elements['profile-bio'].hidden = true;
   elements['profile-location'].hidden = true;
-  elements['profile-links'].innerHTML = '<a class="external-link" href="https://github.com/myowinthein">GitHub</a>';
-  elements.grid.innerHTML = '<p><a class="external-link" href="https://github.com/myowinthein?tab=repositories">Browse public repositories</a></p>';
+  elements['profile-links'].innerHTML = '<a class="external-link" href="https://github.com/myowinthein"><span class="link-label">GitHub</span></a>';
+  elements.grid.innerHTML = '<p><a class="external-link" href="https://github.com/myowinthein?tab=repositories"><span class="link-label">Browse public repositories</span></a></p>';
   const sandbox = {
     document: {
       title: 'myowinthein | Public projects',
@@ -507,10 +507,10 @@ test('loads the introduction, metadata, website, and social links from public Gi
   assert.equal(get('page-twitter-title').getAttribute('content'), sandbox.document.title);
   assert.equal(get('page-twitter-description').getAttribute('content'), 'Current GitHub bio.');
   const links = get('profile-links').innerHTML;
-  assert.match(links, /href="https:\/\/example.com\/">Website/);
-  assert.match(links, /href="https:\/\/github.com\/myowinthein">GitHub/);
-  assert.match(links, /href="https:\/\/www.linkedin.com\/in\/example\/">LinkedIn/);
-  assert.match(links, /href="https:\/\/example.medium.com\/">Medium/);
+  assert.match(links, /href="https:\/\/example.com\/"><span class="link-label">Website/);
+  assert.match(links, /href="https:\/\/github.com\/myowinthein"><span class="link-label">GitHub/);
+  assert.match(links, /href="https:\/\/www.linkedin.com\/in\/example\/"><span class="link-label">LinkedIn/);
+  assert.match(links, /href="https:\/\/example.medium.com\/"><span class="link-label">Medium/);
   assert.ok(urls.includes('https://api.github.com/users/myowinthein'));
   assert.ok(urls.includes('https://api.github.com/users/myowinthein/social_accounts?per_page=100&page=1'));
 });
@@ -632,7 +632,7 @@ test('labels social links by provider, Medium domain, or hostname without www', 
   });
   await sandbox.ready;
   const labels = Array.from(
-    sandbox.document.getElementById('profile-links').innerHTML.matchAll(/>([^<]+)<\/a>/g), m => m[1]);
+    sandbox.document.getElementById('profile-links').innerHTML.matchAll(/<span class="link-label">([^<]+)<\/span><\/a>/g), m => m[1]);
   assert.deepEqual(labels, ['GitHub', 'mastodon', 'example.org', 'Medium', 'notmedium.com', 'no-provider.example']);
 });
 
@@ -662,7 +662,7 @@ test('lists owned public projects without Pages or a homepage, excluding forks a
   assert.match(html, /archived-project/);
   assert.doesNotMatch(html, /private-project|fork-project|Myowinthein.github.io|other-owner/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/plain-project"/);
-  assert.match(html, /Source<\/a>/);
+  assert.match(html, /Source<\/span><\/a>/);
 });
 
 test('fetches six projects initially and appends more only when requested', async () => {
@@ -841,7 +841,7 @@ test('uses safe homepages and escapes API text and URL attributes', async () => 
   await sandbox.document.getElementById('load-more').click();
   const html = sandbox.document.getElementById('grid').innerHTML;
   assert.match(html, /href="https:\/\/example.com\/\?a=1&amp;b=2"/);
-  assert.match(html, /Project page<\/a>/);
+  assert.match(html, /Project page<\/span><\/a>/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/unsafe"/);
   assert.match(html, /href="https:\/\/github.com\/myowinthein\/invalid"/);
   assert.match(html, /&lt;script&gt;/);

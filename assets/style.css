@@ -58,7 +58,14 @@ header .role { color: var(--text); margin-top: 12px; }
 
 a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
 
-.external-link::after {
+.link-label {
+  display: inline-block;
+  max-width: 100%;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.external-link .link-label::after {
   content: "";
   display: inline-block;
   flex-shrink: 0;
@@ -72,7 +79,19 @@ a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px;
 
 a:focus-visible, button:focus-visible {
   outline: 2px solid var(--brand);
-  outline-offset: 4px;
+  outline-offset: 2px;
+}
+
+.profile-links a:focus-visible, .card-links a:focus-visible, footer a:focus-visible {
+  outline: none;
+}
+
+.profile-links a:focus-visible .link-label,
+.card-links a:focus-visible .link-label,
+footer a:focus-visible .link-label {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .profile-links {
@@ -127,6 +146,8 @@ main { width: 100%; max-width: 860px; }
   border-color: var(--brand);
   color: var(--brand);
 }
+
+.theme-toggle:focus-visible { outline-offset: 0; }
 
 .grid {
   display: grid;

@@ -112,7 +112,7 @@ function renderProfileLinks() {
     if (seen.has(link.url)) return false;
     seen.add(link.url);
     return true;
-  }).map(link => `<a class="external-link" href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a>`).join('');
+  }).map(link => `<a class="external-link" href="${escapeHtml(link.url)}"><span class="link-label">${escapeHtml(link.label)}</span></a>`).join('');
 }
 
 function renderProfile(profile) {
@@ -213,13 +213,13 @@ function projectCards(projects) {
     const desc = escapeHtml(r.description || '');
     const name = escapeHtml(r.name);
     const projectLink = url === repoUrl ? '' : `
-          <a class="external-link" href="${escapeHtml(url)}" rel="noopener noreferrer" aria-label="Project page for ${name}">Project page</a>`;
+          <a class="external-link" href="${escapeHtml(url)}" rel="noopener noreferrer" aria-label="Project page for ${name}"><span class="link-label">Project page</span></a>`;
     return `
       <article class="card">
         <h3 class="card-name">${name}</h3>
         <p class="card-desc">${desc}</p>
         <div class="card-links">${projectLink}
-          <a class="external-link" href="${escapeHtml(repoUrl)}" rel="noopener noreferrer" aria-label="Source for ${name}">Source</a>
+          <a class="external-link" href="${escapeHtml(repoUrl)}" rel="noopener noreferrer" aria-label="Source for ${name}"><span class="link-label">Source</span></a>
         </div>
       </article>`;
   }).join('');
