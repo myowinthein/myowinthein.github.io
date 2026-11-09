@@ -61,6 +61,7 @@ a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px;
 .link-label {
   display: inline-block;
   max-width: 100%;
+  padding: 2px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
