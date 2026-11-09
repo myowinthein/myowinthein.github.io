@@ -1,6 +1,6 @@
 # Privacy Notice
 
-Last updated: 2 November 2026
+Last updated: 10 November 2026
 
 This notice explains how information is handled when you visit
 [myowinthein.github.io](https://myowinthein.github.io), a personal project listing
@@ -20,11 +20,15 @@ Loading the page involves requests to these services:
 - **GitHub Pages:** GitHub hosts the site. GitHub states that it logs and stores
   visitors' IP addresses for security purposes, whether or not they are signed in.
   See [GitHub Pages data collection](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages#data-collection).
-- **GitHub API:** Your browser requests public profile, social-account, and
-  repository information directly from `api.github.com`. GitHub receives the
-  request and associated technical information, such as your IP address and
+- **GitHub API:** Your browser requests public profile, social-account,
+  repository, latest-release, and license information directly from `api.github.com`.
+  GitHub receives the request and associated technical information, such as your IP address and
   browser request information. The site
   does not ask you to sign into GitHub or supply an API token.
+- **GitHub profile image:** Your browser requests my public profile image from
+  GitHub's image host, `avatars.githubusercontent.com`. GitHub receives the image
+  request and associated technical information. The site sends no referring-page
+  URL with this request.
 - **Favicon hosting:** Your browser can request the site icon from
   `https://myowin.dev/favicon.svg`. This file belongs to my separate portfolio,
   hosted on Vercel. Vercel receives the icon request and associated technical
@@ -32,8 +36,8 @@ Loading the page involves requests to these services:
   and other website traffic information. Depending on your browser and its
   settings, a request can also include referring-site information.
 
-These requests deliver the page, repository listing, and icon. Hosting providers
-also process technical information to operate and protect their services.
+These requests deliver the page, profile image, repository listing, and icon.
+Hosting providers also process technical information to operate and protect their services.
 Their handling of this information is described in the
 [GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)
 and [Vercel Privacy Notice](https://vercel.com/legal/privacy-notice).
@@ -56,14 +60,24 @@ providers. Clearing it does not delete their records.
 
 ## Public GitHub data cache
 
-The site stores copies of my public GitHub profile, social links, and repository
-pages in your browser's local storage. This cache contains public GitHub data,
-not information you submit through this site.
+The site stores copies of my public GitHub profile, social links, repository
+pages, and successful latest-release and license responses in your browser's local storage.
+This cache contains public GitHub data, not information you submit through this site.
 
 For five minutes after a successful request, the site can reuse that response
 without another API request. Once it is older, cached content can remain visible
 while the site requests an update. If the request fails, the cached content may
-remain visible.
+remain visible, and Load more can use saved repository pages even after five minutes.
+While the page remains open, the site can retry temporary failures in the background
+up to three times, with increasing delays. If GitHub limits requests, retries wait
+until its retry time. Successful background requests refresh the stored copies;
+cards already being browsed remain in place until a later visit uses the updated pages.
+
+If GitHub limits requests, the site also stores a retry time in local storage so
+reloading the page does not immediately repeat blocked requests. This stores a
+time, not the error response. Once that time passes, requests can be tried again.
+The stored retry time is ignored after it expires and can be removed by clearing
+this site's local storage or site data.
 
 The five-minute period does not delete the stored copy. Cached copies remain
 until replaced or removed when you clear this site's local storage or site data
