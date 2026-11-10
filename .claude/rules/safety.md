@@ -1,7 +1,7 @@
-<!-- helm-rule: agent-helm@v3.3.0 -->
+<!-- helm-rule: agent-helm@v3.7.0 -->
 # Operational Safety Rules
 
-Applies on Claude, Codex and other hosts, including copied-only sessions. Loading rules executes no checklist, scan, tool or write. Resolve `{memory_file}` through sibling git.md's **Project memory and configuration** before dependent actions; labelled independent inspection may report unresolved ownership.
+Applies on Claude, Codex and other hosts, including copied-only sessions. Loading rules executes no checklist, scan, tool or write. Resolve `{memory_file}` through sibling git.md's [**Project memory and configuration**](git.md#project-memory-and-configuration) before dependent actions; labelled independent inspection may report unresolved ownership.
 
 ## Host capabilities
 
@@ -70,7 +70,7 @@ Classify by actual effects, scope and recoverability, never only by command name
 
 Operations requiring explicit authorization, independent of auto-commit/tool permission:
 
-- Git push/force-push, tag creation, remote branch/tag deletion and provider merges publishing refs; follow git.md's Publication contract.
+- Git push/force-push, tag creation, remote branch/tag deletion and provider merges publishing refs; follow [git.md's Publication contract](git.md#publication).
 - Package publication/public release creation (`npm publish`, registry uploads, hosted release creation).
 - Committing public, legally-binding documents (privacy policy, terms of service and similar), including integration commits.
 - Deployment commands.

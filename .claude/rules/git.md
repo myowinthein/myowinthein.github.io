@@ -1,4 +1,4 @@
-<!-- helm-rule: agent-helm@v3.2.5 -->
+<!-- helm-rule: agent-helm@v3.7.0 -->
 # Git Rules
 
 ---
@@ -18,7 +18,7 @@ Applies without a loaded plugin. Resolve configuration before dependent mutation
 
 ## Host capabilities and operational state
 
-Verify the selected working tree and only the capabilities needed for the planned action; folder access proves neither Git/provider access nor an available test environment. Verify results before claiming a commit, merge, push, promotion or checkpoint succeeded. Follow sibling `safety.md` for approval, user-work preservation, capability failures and its **Operational Helm state** boundary: loading rules or switching agents never grants state access/migration, and missing owning procedures leave records untouched. The copied pair remains sufficient for ordinary work without a package/runtime dependency.
+Verify the selected working tree and only the capabilities needed for the planned action; folder access proves neither Git/provider access nor an available test environment. Verify results before claiming a commit, merge, push, promotion or checkpoint succeeded. Follow sibling `safety.md` for approval, user-work preservation, capability failures and its [**Operational Helm state**](safety.md#operational-helm-state) boundary: loading rules or switching agents never grants state access/migration, and missing owning procedures leave records untouched. The copied pair remains sufficient for ordinary work without a package/runtime dependency.
 
 ### Read-only scope
 
@@ -66,7 +66,7 @@ When active:
 - Read the full changed content and staged diff; filenames/diffstat alone are not content review. Check the exact outgoing subject against resolved project/user policy, using scoped Conventional Commits as Helm's default. After committing, verify the actual subject and paths through Git. A logical unit is one coherent, independently reviewable change, not every small edit.
 - Commit approval or auto-commit never approves publication; apply the Publication contract below.
 
-**Exception:** safety.md's bounded commits, including generated legal documents and their integration commits, always require concrete content/commit approval. Reuse that known approval for the same action; auto-commit alone cannot supply it.
+**Exception:** [safety.md's bounded commits](safety.md#agent-execution-boundaries), including generated legal documents and their integration commits, always require concrete content/commit approval. Reuse that known approval for the same action; auto-commit alone cannot supply it.
 
 ---
 
