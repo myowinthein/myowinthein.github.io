@@ -32,6 +32,9 @@ public GitHub repositories as project cards.
   on-demand GitHub repository fetch/filter/render.
 - `assets/style.css`: responsive cards and theme variables; dark overrides use
   `[data-theme="dark"]` on `<html>`.
+- `assets/icons/external-link.svg`: Lucide icon (ISC notice in its metadata), drawn as a
+  CSS mask by `.external-link .link-label::after`. A link shows the arrow only with
+  `class="external-link"` and a `.link-label` span, including links the script generates.
 - `test/script.test.cjs`: runs the shipped script in a VM; covers filtering, pagination,
   storage failures, independent profile/social loading, link safety, and empty/error states.
 - `.github/workflows/checks.yml`: dependency-free syntax/tests on pushes and pull requests,
@@ -127,6 +130,8 @@ public GitHub repositories as project cards.
   system theme changes.
 - The favicon URL is `https://myowin.dev/favicon.svg`; no local favicon file is tracked.
   Edit the hosted asset to change its image, or the HTML link to change its location.
+- The test DOM stub in `test/script.test.cjs` only returns ids listed in `ELEMENT_IDS`,
+  and a test requires each one in `index.html`. Add any new id the script reads to both.
 
 ## Rules
 
@@ -136,4 +141,4 @@ Read and follow these adopted project rules:
 - .claude/rules/writing.md
 - .claude/rules/design.md
 
-<!-- last-reviewed: 10593e0c907ee6425f563243acc5ebd8ba2b928e -->
+<!-- last-reviewed: 711c298ef8cc3036c5a779233d4a09598acaeb39 -->
