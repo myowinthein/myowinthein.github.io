@@ -2,7 +2,7 @@
 
 My GitHub Pages landing page, with my profile and public projects.
 
-[Visit the site](https://myowinthein.github.io).
+[Visit the site](https://myowinthein.github.io)
 
 ## About this site
 
