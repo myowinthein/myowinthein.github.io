@@ -42,6 +42,8 @@ public GitHub repositories as project cards.
 
 ## Domain Rules
 
+- Link boundaries: this profile page and its legal page are internal; repository cards, social profiles and sibling project websites are external, even under `myowinthein.github.io`. Follow Writing’s Reference links workflow; keep project links in the current tab.
+
 - Include only public, non-fork repositories owned by `myowinthein`; exclude
   `myowinthein.github.io` itself. Owner and self-name comparisons are case-insensitive.
 - GitHub Pages and a homepage are optional. Archived repositories remain eligible.
