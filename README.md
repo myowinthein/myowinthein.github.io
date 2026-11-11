@@ -18,7 +18,7 @@ Built with plain HTML, CSS and JavaScript, without a framework or build step.
 
 ## Contributing
 
-This is my personal site. Issues and pull requests are not expected.
+This is my personal landing page for exploring my GitHub projects. Issues and pull requests are not expected.
 
 ## License
 
