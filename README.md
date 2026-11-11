@@ -18,7 +18,7 @@ Built with plain HTML, CSS and JavaScript, without a framework or build step.
 
 ## Contributing
 
-This is a personal site. Issues and PRs are not expected.
+This is my personal site. Issues and pull requests are not expected.
 
 ## License
 
