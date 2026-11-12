@@ -1,0 +1,23 @@
+name: Share feedback
+description: Suggest an improvement or point out unclear content on the site.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Reports are public. Remove private information from text, links and attachments.
+  - type: textarea
+    id: feedback
+    attributes:
+      label: What could be better?
+      description: Describe the improvement or unclear content and why it matters. Include the page link or section when relevant.
+      placeholder: I'd like a short explanation of how the projects are ordered.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested change
+      description: Share a possible solution or clearer wording, if you have one.
+      placeholder: Add a brief note above the project list.
+    validations:
+      required: false
