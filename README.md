@@ -18,7 +18,7 @@ Built with plain HTML, CSS and JavaScript, without a framework or build step.
 
 ## Contributing
 
-This is my personal landing page for exploring my GitHub projects. Issues and pull requests are not expected.
+This is my personal landing page for exploring my GitHub projects. If something doesn’t work or you have a suggestion, [open an issue](https://github.com/myowinthein/myowinthein.github.io/issues/new/choose). Pull requests aren’t expected.
 
 ## License
 
