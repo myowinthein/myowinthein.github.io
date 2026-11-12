@@ -22,6 +22,6 @@ This is my personal landing page for exploring my GitHub projects. If something 
 
 ## License
 
-All rights reserved. This code is not licensed for reuse.
+All rights reserved. No project-wide reuse license is provided. © Myo Win Thein.
 
 <!-- last-reviewed: c6ed4e26389827b58b59e6678eacaa57e6ef7350 -->
