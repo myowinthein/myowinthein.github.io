@@ -39,6 +39,9 @@ public GitHub repositories as project cards.
   storage failures, independent profile/social loading, link safety, and empty/error states.
 - `.github/workflows/checks.yml`: dependency-free syntax/tests on pushes and pull requests,
   using Node.js 24. This reports results without gating the legacy Pages deployment.
+- `.github/ISSUE_TEMPLATE/`: public bug and feedback issue forms (blank issues stay
+  enabled), reached from the footer's external "Report an issue" link and the README.
+  Keep the forms, footer link and README contributing text consistent.
 - `legal/privacy-policy.md`: privacy notice linked from the footer. It describes theme
   storage, the GitHub data cache, GitHub API requests and the favicon host, so update it
   when browser storage, network requests or third-party hosts change.
@@ -145,4 +148,4 @@ Read and follow these adopted project rules:
 - .claude/rules/writing.md
 - .claude/rules/design.md
 
-<!-- last-reviewed: 711c298ef8cc3036c5a779233d4a09598acaeb39 -->
+<!-- last-reviewed: a087eca8803da7f0e2931ec401330328d6c6f569 -->
