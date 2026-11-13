@@ -167,8 +167,22 @@
       "reason": "A markup slip would drop the arrow or the link-label span on the issue link, or break the privacy link in the local preview; the effect is cosmetic or a broken footer link.",
       "action": "add",
       "layer": "static",
-      "state": "open",
-      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
+      "state": "resolved",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
+      "tests": [
+        "test/script.test.cjs::index.html footer marks the issue chooser as external and keeps the privacy notice internal"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::index.html footer marks the issue chooser as external and keeps the privacy notice internal"
+        ],
+        "method": "runtime",
+        "outcome": "All 132 tests passed with zero failures, skips or todos. The case asserts the issue-chooser link has the external-link class and link-label span, and the privacy link keeps its absolute URL without the external class. In a scratchpad copy, removing the class from the issue link or adding it to the privacy link each made the case fail.",
+        "commit": "72cc7ee9dcc0545949636b21a8da17481c6e1cdb",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; reads index.html as text; no network or real browser"
+      }
     },
     {
       "id": "g-5810ae5d-48d5-4d98-884a-a18074cb6887",
