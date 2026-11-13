@@ -104,6 +104,16 @@ Correspondence is managed in my Gmail mailbox rather than in a database operated
 by this website. Contact me to ask about retention of, or request deletion of,
 messages you have sent.
 
+## Reporting an issue
+
+The footer's Report an issue link opens this repository's issue forms on
+GitHub. An issue is public, and GitHub processes what you submit, including your
+GitHub username, under the
+[GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
+I receive reports through GitHub, not through a form on this site. The forms
+ask for details such as your browser and device, so leave out anything private.
+You can contact me by email about a report you submitted.
+
 ## Provider records and privacy requests
 
 GitHub and Google describe their retention criteria, privacy contacts,
