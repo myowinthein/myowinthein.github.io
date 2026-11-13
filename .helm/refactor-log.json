@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "assessed_commit": "c4ecd4743dc2882b10e80ab9b905a1b3d89fbe6b",
-  "full_scan_commit": "aeed13a264b24dd9a06795b282159a09632c4e67",
+  "assessed_commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
+  "full_scan_commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
   "findings": [
     {
       "id": "r-13c9a457-50c1-4038-8b19-9fe24c3ca2c3",
@@ -246,6 +246,64 @@
           }
         ]
       }
+    },
+    {
+      "id": "r-b1e5b826-6315-4a38-bd56-92c211339f24",
+      "category": "Code Quality",
+      "summary": "loadMoreProjects picks the post-load focus target with a nested ternary inside its finally block, mixing state reset, aria updates and focus choice in one place.",
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
+        "date": "2026-11-13"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
+        "date": "2026-11-13",
+        "priority": "low",
+        "risk": "needs-review",
+        "reason": "The focus rules (first new card, existing last card, final count, or none) are accessibility behavior that the next maintainer must decode from a three-level ternary before changing anything. Naming the steps removes that decoding cost without changing which element receives focus.",
+        "evidence": [
+          "assets/script.js:589-597: target = firstNewCard?.querySelector('.card-name') || (loadMore.hidden ? !hasMore ? projectStatus : lastCard?.querySelector('.card-name') || grid : null)",
+          "test/script.test.cjs: continues keyboard focus into newly appended projects, moves focus to existing content when a failed batch hides Load more, does not pull focus back after the user tabs away, and moves focus to the final count cover every branch except the final fallback to the grid element"
+        ],
+        "invariant": "Keep which element receives focus in each case, the tabindex=-1 assignment, the no-focus-theft rule when the user moved away, and the order of aria-busy/aria-disabled/label updates unchanged."
+      },
+      "state": "open",
+      "depends_on": []
+    },
+    {
+      "id": "r-2b623963-7f22-49bb-922b-3d1bf3974dfb",
+      "category": "Code Quality",
+      "summary": "loadProjectRelease and loadProjectLicense repeat the same cached-request, render and ignore-failure flow, differing only in endpoint, validator and renderer.",
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
+        "date": "2026-11-13"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
+        "date": "2026-11-13",
+        "priority": "low",
+        "risk": "safe",
+        "reason": "The shared contract (use the five-minute cache, render stale data while refreshing, never interrupt browsing on failure) lives in two copies, so a change to it needs two coordinated edits. One small helper keeps the knowledge in one place.",
+        "evidence": [
+          "assets/script.js:480-503: both functions call cachedGitHub with a render callback, render the response and swallow errors in a catch block",
+          "test/script.test.cjs: caches release responses, refreshes expired versions and retains them after a failed refresh; caches licenses, preserves a focused link during refresh and keeps stale data after failure; hides failed or unsafe license results; omits missing, unavailable, unsafe, blank, draft or prerelease versions cover both flows"
+        ],
+        "invariant": "Keep the request URLs, validators, cache keys, license-only-when-advertised rule, stale-then-fresh rendering, quiet failure and the existing function names used by retry callbacks unchanged."
+      },
+      "state": "open",
+      "depends_on": []
     }
   ]
 }
