@@ -384,8 +384,18 @@
       "reason": "Layout shift, tap-target size and the rendered tab icon need a real browser and human acceptance; automation cannot sign them off.",
       "action": "manual",
       "layer": "manual",
-      "state": "open",
-      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
+      "state": "resolved",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
+      "closure": {
+        "reason": "manual-signoff",
+        "refs": [
+          "Developer-reported manual browser check of the local preview at commit 50a7624a142d47b818acc16a3b9c01027912625a (evidence files on the developer's machine: /tmp/landing-p4-browser-W55u7q/results.json and chrome-window.png)"
+        ],
+        "method": "manual",
+        "outcome": "Reported by the developer from a visible Chrome run at 320px, 390px and 1280px widths against the local preview with controlled API and image responses: the tab icon is circular, the header moved 0px during delayed avatar loading, links are underlined, buttons are at least 44x44px, and all checks also passed in the dark theme. I did not run or inspect the browser evidence myself.",
+        "commit": "50a7624a142d47b818acc16a3b9c01027912625a",
+        "scope": "Chrome on the developer's machine, widths 320/390/1280px, light and dark themes, local preview with controlled responses; not the deployed site"
+      }
     }
   ]
 }
