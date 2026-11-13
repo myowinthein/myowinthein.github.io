@@ -273,8 +273,27 @@
         ],
         "invariant": "Keep which element receives focus in each case, the tabindex=-1 assignment, the no-focus-theft rule when the user moved away, and the order of aria-busy/aria-disabled/label updates unchanged."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "afbdf58359aa6ca2672ad2c4230458e1c898ab57",
+        "date": "2026-11-13",
+        "method": "runtime",
+        "evidence": [
+          "assets/script.js: the nested-ternary focus choice in loadMoreProjects is now the named helper focusAfterLoad with the same targets and the same tabindex and focus calls",
+          "The focus tests (new cards, failed batch, no focus theft, final count) passed unchanged; swapping the final-count condition in a scratchpad copy made two of them fail",
+          "Limit: the last fallback to the grid element has no test and was kept as is"
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js assets/theme.js; node --test test/script.test.cjs",
+            "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic DOM and fetch stubs; no network or real browser",
+            "outcome": "Syntax checks passed; 132 tests passed with 0 failures, skips or todos, same as the baseline before the change"
+          }
+        ]
+      }
     },
     {
       "id": "r-2b623963-7f22-49bb-922b-3d1bf3974dfb",
@@ -302,8 +321,26 @@
         ],
         "invariant": "Keep the request URLs, validators, cache keys, license-only-when-advertised rule, stale-then-fresh rendering, quiet failure and the existing function names used by retry callbacks unchanged."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "5e279dfa882b5ef699cd73992ee78e74678bf3d1",
+        "date": "2026-11-13",
+        "method": "runtime",
+        "evidence": [
+          "assets/script.js: loadProjectRelease and loadProjectLicense now delegate to one loadProjectDetail(url, validate, render) helper; names, URLs, validators and the license-only-when-advertised guard are unchanged",
+          "The release and license tests (cache, stale refresh, failure, unsafe data, blocked storage) passed unchanged"
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js assets/theme.js; node --test test/script.test.cjs",
+            "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic DOM and fetch stubs; no network or real browser",
+            "outcome": "Syntax checks passed; 132 tests passed with 0 failures, skips or todos, same as the baseline before the change"
+          }
+        ]
+      }
     }
   ]
 }
