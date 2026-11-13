@@ -1008,6 +1008,13 @@ test('index.html provides every element the script reads and keeps scripts and s
   assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)|<style/i);
 });
 
+test('index.html footer marks the issue chooser as external and keeps the privacy notice internal', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  const footer = html.match(/<footer>([\s\S]*?)<\/footer>/)[1];
+  assert.match(footer, /<a class="external-link" href="https:\/\/github\.com\/myowinthein\/myowinthein\.github\.io\/issues\/new\/choose"><span class="link-label">Report an issue<\/span><\/a>/);
+  assert.match(footer, /<a href="https:\/\/myowinthein\.github\.io\/legal\/privacy-policy\.html"><span class="link-label">Privacy notice<\/span><\/a>/);
+});
+
 test('escapeHtml escapes &, <, >, and "', () => {
   const { escapeHtml } = loadScript();
   assert.equal(escapeHtml('<script>&"</script>'), '&lt;script&gt;&amp;&quot;&lt;/script&gt;');
