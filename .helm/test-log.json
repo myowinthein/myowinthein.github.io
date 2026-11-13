@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301",
-  "full_scan_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+  "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
+  "full_scan_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
   "cases": [
     {
       "id": "g-03063a55-0f7a-4615-ba49-bb1190a805a9",
@@ -36,6 +36,46 @@
       }
     },
     {
+      "id": "g-3d697127-538d-4438-b27b-4d2eb85a67b9",
+      "expected": "When the profile avatar loads, the page icon becomes a circular PNG copy of it (drawn clipped to a circle) from an anonymous, no-referrer image request; a failed conversion keeps the direct GitHub icon; a stale avatar load never overwrites a newer profile's icon; an unchanged avatar is not reloaded and a removed avatar restores the direct icon.",
+      "basis": [
+        "assets/script.js:240-272 (updateFavicon) and 306 (renderProfile call)",
+        "AGENTS.md favicon entry: in-memory circular PNG, anonymous CORS image, no referrer, direct URL on failure, stale loads cannot overwrite",
+        "legal/privacy-policy.md favicon paragraph promises no referring-page URL and an in-memory copy",
+        "test/script.test.cjs: the sandbox only defines `Image: class {}` and no test loads, converts or asserts the favicon"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs",
+        "legal/privacy-policy.md"
+      ],
+      "priority": "medium",
+      "reason": "A regression would drop the circular icon, send a referrer the privacy notice says is not sent, or show an outdated avatar after a profile refresh. The race and failure branches are new and entirely untested.",
+      "action": "add",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
+    },
+    {
+      "id": "g-49ebf86e-5363-400a-af72-cf10d630a773",
+      "expected": "A missing or forbidden optional resource (404, or a 403 that is not a rate limit) for a release or license is requested once and never retried in the background; only rate limits and temporary failures are retried, at most three times.",
+      "basis": [
+        "assets/script.js:67-76 (queueGitHubRetry skips 4xx unless a rate limit)",
+        "AGENTS.md: temporary failures get at most three background retries; missing or forbidden resources are not transient",
+        "test/script.test.cjs: 503 retries are bounded and 404/403 responses hide the row, but no test asserts that no retry timer is scheduled for 4xx responses"
+      ],
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "priority": "medium",
+      "reason": "Most repositories have no release, so a regression that retried 404s would multiply unauthenticated API requests against the 60 per hour limit and could trigger the rate limit the site works hard to avoid.",
+      "action": "add",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
+    },
+    {
       "id": "g-4c377636-98d1-4a5e-9c94-a04c1397ba47",
       "expected": "The listing renders every synthetic repository in API order across pages using the requested page size, without omissions or duplicates.",
       "basis": [
@@ -68,6 +108,25 @@
         "command": "node --test test/script.test.cjs",
         "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic GitHub pagination over 101 repositories with a bounded request guard."
       }
+    },
+    {
+      "id": "g-5407dfd8-56ad-426d-ad65-d0a91a522ecd",
+      "expected": "The footer links the issue chooser as an external link with the arrow marker, and links the privacy notice by its absolute internal URL without the external marker.",
+      "basis": [
+        "index.html:57-60 footer links",
+        "AGENTS.md: a link shows the arrow only with class external-link and a link-label span; the privacy footer uses the published absolute URL",
+        "test/script.test.cjs: the index.html test checks ids and script order only"
+      ],
+      "paths": [
+        "index.html",
+        "test/script.test.cjs"
+      ],
+      "priority": "low",
+      "reason": "A markup slip would drop the arrow or the link-label span on the issue link, or break the privacy link in the local preview; the effect is cosmetic or a broken footer link.",
+      "action": "add",
+      "layer": "static",
+      "state": "open",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
     },
     {
       "id": "g-5810ae5d-48d5-4d98-884a-a18074cb6887",
@@ -251,6 +310,26 @@
         "command": "node --test test/script.test.cjs",
         "scope": "Node.js v24.21.0 VM component tests in the project root; storage stubs that throw on read or write."
       }
+    },
+    {
+      "id": "g-edd984a0-266c-4e70-99fe-6d0cce96cbe2",
+      "expected": "In a real browser at narrow and wide widths and in light and dark themes: the tab icon is a circle, the header does not shift when the avatar loads, links stay underlined, and interactive controls are at least 44px tall.",
+      "basis": [
+        "assets/style.css:38-58, 84-92, 133-139, 155-170, 336-340 (header reservation, underline, 44px targets)",
+        "AGENTS.md: keep links underlined and controls at least 44px; reserve avatar and profile space without clipping",
+        "test/script.test.cjs runs scripts in a VM with DOM stubs, so layout, painting and the browser tab icon cannot be verified there"
+      ],
+      "paths": [
+        "assets/style.css",
+        "assets/script.js",
+        "index.html"
+      ],
+      "priority": "low",
+      "reason": "Layout shift, tap-target size and the rendered tab icon need a real browser and human acceptance; automation cannot sign them off.",
+      "action": "manual",
+      "layer": "manual",
+      "state": "open",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
     }
   ]
 }
