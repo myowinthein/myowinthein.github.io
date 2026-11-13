@@ -477,29 +477,24 @@ function renderCachedProjectDetails(projects) {
   }
 }
 
-async function loadProjectRelease(project) {
-  const render = release => renderProjectRelease(project, release);
+async function loadProjectDetail(url, validate, render) {
   try {
-    const response = await cachedGitHub(
-      `${projectApi(project)}/releases/latest`,
-      isReleaseData, cached => render(cached.data));
+    const response = await cachedGitHub(url, validate, cached => render(cached.data));
     render(response.data);
   } catch {
-    // A missing release or failed request must not interrupt project browsing.
+    // A missing detail or failed request must not interrupt project browsing.
   }
+}
+
+async function loadProjectRelease(project) {
+  await loadProjectDetail(`${projectApi(project)}/releases/latest`, isReleaseData,
+    release => renderProjectRelease(project, release));
 }
 
 async function loadProjectLicense(project) {
   if (!isProfileData(project.license)) return;
-  const render = data => renderProjectLicense(project, data);
-  try {
-    const response = await cachedGitHub(
-      `${projectApi(project)}/license`,
-      isLicenseData, cached => render(cached.data));
-    render(response.data);
-  } catch {
-    // A missing or unavailable license leaves the card's other links usable.
-  }
+  await loadProjectDetail(`${projectApi(project)}/license`, isLicenseData,
+    data => renderProjectLicense(project, data));
 }
 
 function projectCards(projects) {
