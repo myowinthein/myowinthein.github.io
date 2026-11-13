@@ -53,8 +53,32 @@
       "reason": "A regression would drop the circular icon, send a referrer the privacy notice says is not sent, or show an outdated avatar after a profile refresh. The race and failure branches are new and entirely untested.",
       "action": "add",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
+      "state": "resolved",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
+      "tests": [
+        "test/script.test.cjs::replaces the favicon with a circular copy of the avatar once it loads",
+        "test/script.test.cjs::keeps the direct favicon when the canvas is no-context",
+        "test/script.test.cjs::keeps the direct favicon when the canvas is tainted",
+        "test/script.test.cjs::ignores a stale avatar load after a newer profile replaces it",
+        "test/script.test.cjs::does not reload an unchanged avatar or discard its converted favicon",
+        "test/script.test.cjs::restores the direct favicon when the profile no longer has an avatar"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::replaces the favicon with a circular copy of the avatar once it loads",
+          "test/script.test.cjs::keeps the direct favicon when the canvas is no-context",
+          "test/script.test.cjs::keeps the direct favicon when the canvas is tainted",
+          "test/script.test.cjs::ignores a stale avatar load after a newer profile replaces it",
+          "test/script.test.cjs::does not reload an unchanged avatar or discard its converted favicon",
+          "test/script.test.cjs::restores the direct favicon when the profile no longer has an avatar"
+        ],
+        "method": "runtime",
+        "outcome": "All 128 tests passed with zero failures, skips or todos at the test commit. The six new cases assert the anonymous no-referrer request, the clip-then-draw order, the converted icon, the direct-icon fallback, the stale-load guard, the unchanged-avatar guard and the reset. In a scratchpad copy, removing the stale guard, the no-referrer setting, clip, the crossOrigin setting, the fallback reset or the unchanged-avatar guard each made at least one case fail. The canvas-unavailable cases also pass through the existing catch and are not independent of it.",
+        "commit": "2a540475d9202feeda17996677cb085b4960f347",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic DOM, canvas, Image and fetch stubs; no network or real browser"
+      }
     },
     {
       "id": "g-49ebf86e-5363-400a-af72-cf10d630a773",
@@ -72,8 +96,26 @@
       "reason": "Most repositories have no release, so a regression that retried 404s would multiply unauthenticated API requests against the 60 per hour limit and could trigger the rate limit the site works hard to avoid.",
       "action": "add",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f"
+      "state": "resolved",
+      "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
+      "tests": [
+        "test/script.test.cjs::requests missing or forbidden optional details once without background retries: 403",
+        "test/script.test.cjs::requests missing or forbidden optional details once without background retries: 404",
+        "test/script.test.cjs::requests missing or forbidden optional details once without background retries: 410"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::requests missing or forbidden optional details once without background retries: 403",
+          "test/script.test.cjs::requests missing or forbidden optional details once without background retries: 404",
+          "test/script.test.cjs::requests missing or forbidden optional details once without background retries: 410"
+        ],
+        "method": "runtime",
+        "outcome": "All 131 tests passed with zero failures, skips or todos. Each of 403 (not a rate limit), 404 and 410 makes exactly one release and one license request and leaves no retry timer. Removing the 4xx guard from queueGitHubRetry in a scratchpad copy made all three cases fail.",
+        "commit": "c7f431355107a2cc9bc342ff322f4acef3bd1b47",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic DOM, canvas, Image and fetch stubs; no network or real browser"
+      }
     },
     {
       "id": "g-4c377636-98d1-4a5e-9c94-a04c1397ba47",
