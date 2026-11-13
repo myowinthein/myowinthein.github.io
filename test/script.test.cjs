@@ -83,6 +83,7 @@ function loadScript(
   const attributes = new Map();
   const focusState = { activeElement: null };
   const timers = new Map();
+  const images = [];
   let nextTimer = 1;
   let elapsed = 0;
   const mediaHandlers = new Map();
@@ -121,8 +122,25 @@ function loadScript(
         }
         return elements[id];
       },
-      createElement: tag => element(tag, focusState),
+      createElement: tag => tag === 'canvas' ? {
+        getContext() {
+          if (sandbox.canvasMode === 'no-context') return null;
+          return {
+            beginPath() { sandbox.canvasCalls.push('beginPath'); },
+            arc(...args) { sandbox.canvasCalls.push(['arc', ...args]); },
+            clip() { sandbox.canvasCalls.push('clip'); },
+            drawImage() { sandbox.canvasCalls.push('drawImage'); },
+          };
+        },
+        toDataURL(type) {
+          if (sandbox.canvasMode === 'tainted') throw new Error('Tainted canvas');
+          return `data:${type};circle-${sandbox.canvasCalls.length}`;
+        },
+      } : element(tag, focusState),
     },
+    canvasCalls: [],
+    canvasMode: 'ok',
+    images,
     window: {
       matchMedia() { return media; },
       addEventListener(type, handler) { windowHandlers.set(type, handler); },
@@ -143,7 +161,7 @@ function loadScript(
       return profileFetch(url);
     },
     URL,
-    Image: class {},
+    Image: class { constructor() { images.push(this); } },
     Date: class extends Date { static now() { return (typeof now === 'function' ? now() : now) + elapsed; } },
     timers,
     async runNextRetry() {
@@ -1127,6 +1145,62 @@ test('hides a failed avatar image without changing the profile', async () => {
   avatar.dispatchEvent({ type: 'error' });
   assert.equal(avatar.hidden, true);
   assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Current GitHub Name');
+});
+
+const DIRECT_FAVICON = 'https://github.com/myowinthein.png?size=64';
+const AVATAR = 'https://avatars.githubusercontent.com/u/1234';
+
+test('replaces the favicon with a circular copy of the avatar once it loads', async () => {
+  const sandbox = loadScript(undefined, { profileFetch: async () => response({ avatar_url: AVATAR }) });
+  await sandbox.ready;
+  const favicon = sandbox.document.getElementById('page-favicon');
+  const [image] = sandbox.images;
+  assert.equal(image.src, `${AVATAR}?s=144`);
+  assert.equal(image.crossOrigin, 'anonymous');
+  assert.equal(image.referrerPolicy, 'no-referrer');
+  assert.equal(favicon.getAttribute('href'), DIRECT_FAVICON);
+  image.onload();
+  assert.deepEqual(sandbox.canvasCalls, ['beginPath', ['arc', 32, 32, 32, 0, Math.PI * 2], 'clip', 'drawImage']);
+  assert.equal(favicon.getAttribute('href'), 'data:image/png;circle-4');
+});
+
+for (const canvasMode of ['no-context', 'tainted']) {
+  test(`keeps the direct favicon when the canvas is ${canvasMode}`, async () => {
+    const sandbox = loadScript(undefined, { profileFetch: async () => response({ avatar_url: AVATAR }) });
+    await sandbox.ready;
+    sandbox.canvasMode = canvasMode;
+    sandbox.images[0].onload();
+    assert.equal(sandbox.document.getElementById('page-favicon').getAttribute('href'), DIRECT_FAVICON);
+  });
+}
+
+test('ignores a stale avatar load after a newer profile replaces it', async () => {
+  const sandbox = loadScript(undefined, { profileFetch: async () => response({ avatar_url: AVATAR }) });
+  await sandbox.ready;
+  sandbox.renderProfile({ avatar_url: 'https://avatars.githubusercontent.com/u/5678' });
+  const [stale, current] = sandbox.images;
+  const favicon = sandbox.document.getElementById('page-favicon');
+  current.onload();
+  stale.onload();
+  assert.equal(favicon.getAttribute('href'), 'data:image/png;circle-4');
+  assert.equal(sandbox.canvasCalls.length, 4);
+});
+
+test('does not reload an unchanged avatar or discard its converted favicon', async () => {
+  const sandbox = loadScript(undefined, { profileFetch: async () => response({ avatar_url: AVATAR }) });
+  await sandbox.ready;
+  sandbox.images[0].onload();
+  sandbox.renderProfile({ avatar_url: AVATAR });
+  assert.equal(sandbox.images.length, 1);
+  assert.equal(sandbox.document.getElementById('page-favicon').getAttribute('href'), 'data:image/png;circle-4');
+});
+
+test('restores the direct favicon when the profile no longer has an avatar', async () => {
+  const sandbox = loadScript(undefined, { profileFetch: async () => response({ avatar_url: AVATAR }) });
+  await sandbox.ready;
+  sandbox.images[0].onload();
+  sandbox.renderProfile({});
+  assert.equal(sandbox.document.getElementById('page-favicon').getAttribute('href'), DIRECT_FAVICON);
 });
 
 test('hides missing profile fields and avoids duplicate website and social links', async () => {
