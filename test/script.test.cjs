@@ -614,6 +614,20 @@ test('bounds temporary background retries with increasing delays and no visible 
   assert.equal(sandbox.document.getElementById('load-more').hidden, true);
 });
 
+for (const status of [403, 404, 410]) {
+  test(`requests missing or forbidden optional details once without background retries: ${status}`, async () => {
+    const requests = { release: 0, license: 0 };
+    const sandbox = loadScript(paginatedFetch([repo('sample', { license: { spdx_id: 'MIT' } })]), {
+      now: CACHE_TEST_TIME,
+      releaseFetch: async () => { requests.release += 1; return apiResponse(status, { message: 'Not available' }); },
+      licenseFetch: async () => { requests.license += 1; return apiResponse(status, { message: 'Not available' }); },
+    });
+    await sandbox.ready;
+    assert.deepEqual(requests, { release: 1, license: 1 });
+    assert.equal(sandbox.timers.size, 0);
+  });
+}
+
 test('restores optional details through background retries without replacing cards or focus', async () => {
   let recover = false;
   const sandbox = loadScript(paginatedFetch([repo('sample', { license: {} })]), {
