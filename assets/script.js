@@ -531,6 +531,18 @@ function showProjectBatch(projects) {
   if (projects.length) grid.insertAdjacentHTML('beforeend', projectCards(projects));
 }
 
+function focusAfterLoad(firstNewCard) {
+  let target = firstNewCard?.querySelector('.card-name');
+  if (!target && loadMore.hidden) {
+    // Load more is gone, so keep focus on the final count or the last card.
+    target = !hasMore ? projectStatus
+      : grid.children[displayedProjects.length - 1]?.querySelector('.card-name') || grid;
+  }
+  if (!target) return;
+  target.setAttribute('tabindex', '-1');
+  target.focus();
+}
+
 async function loadMoreProjects() {
   if (loading || !hasMore || (loadMore.hidden && projectsBlocked)) return;
   loading = true;
@@ -581,15 +593,7 @@ async function loadMoreProjects() {
     grid.setAttribute('aria-busy', 'false');
     updateProjectControls();
     // Continue into new content without stealing focus if the user moved away.
-    if (hadButtonFocus) {
-      const target = firstNewCard?.querySelector('.card-name') || (loadMore.hidden
-        ? !hasMore ? projectStatus : grid.children[displayedProjects.length - 1]?.querySelector('.card-name') || grid
-        : null);
-      if (target) {
-        target.setAttribute('tabindex', '-1');
-        target.focus();
-      }
-    }
+    if (hadButtonFocus) focusAfterLoad(firstNewCard);
     scheduleGitHubRetries();
   }
   await Promise.allSettled(detailRequests);
