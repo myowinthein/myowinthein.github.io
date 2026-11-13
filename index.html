@@ -17,7 +17,7 @@
   <meta name="twitter:image" content="https://github.com/myowinthein.png">
   <meta name="twitter:image:alt" content="GitHub avatar for myowinthein.">
   <link rel="canonical" href="https://myowinthein.github.io/">
-  <link rel="icon" type="image/svg+xml" href="https://myowin.dev/favicon.svg">
+  <link id="page-favicon" rel="icon" type="image/png" href="https://github.com/myowinthein.png?size=64">
   <script src="assets/theme.js"></script>
   <link rel="stylesheet" href="assets/style.css">
 </head>
@@ -26,7 +26,9 @@
 <button class="theme-toggle" id="theme-toggle" type="button" title="Switch to dark theme" aria-label="Switch to dark theme">☾</button>
 
 <header>
-  <img class="profile-avatar" id="profile-avatar" width="72" height="72" alt="" referrerpolicy="no-referrer" hidden>
+  <div class="profile-avatar-slot">
+    <img class="profile-avatar" id="profile-avatar" width="72" height="72" alt="" referrerpolicy="no-referrer" hidden>
+  </div>
   <h1 id="profile-name">myowinthein</h1>
   <div class="profile-details" id="profile-details" hidden>
     <p class="role" id="profile-bio" hidden></p>
@@ -53,6 +55,7 @@
 </main>
 
 <footer>
+  <a class="external-link" href="https://github.com/myowinthein/myowinthein.github.io/issues/new/choose"><span class="link-label">Report an issue</span></a>
   <a href="https://myowinthein.github.io/legal/privacy-policy.html"><span class="link-label">Privacy notice</span></a>
 </footer>
 

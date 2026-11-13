@@ -1,6 +1,6 @@
 # Privacy Notice
 
-Last updated: 10 November 2026
+Last updated: 13 November 2026
 
 This notice explains how information is handled when you visit
 [myowinthein.github.io](https://myowinthein.github.io), a personal project listing
@@ -29,31 +29,38 @@ Loading the page involves requests to these services:
   GitHub's image host, `avatars.githubusercontent.com`. GitHub receives the image
   request and associated technical information. The site sends no referring-page
   URL with this request.
-- **Favicon hosting:** Your browser can request the site icon from
-  `https://myowin.dev/favicon.svg`. This file belongs to my separate portfolio,
-  hosted on Vercel. Vercel receives the icon request and associated technical
-  information. Its privacy notice describes collection of end-user IP addresses
-  and other website traffic information. Depending on your browser and its
-  settings, a request can also include referring-site information.
+- **Favicon hosting:** Your browser can request my GitHub avatar as the site icon
+  through `github.com`, which redirects to `avatars.githubusercontent.com`.
+  GitHub receives the requests and associated technical information. Depending
+  on your browser and its settings, requests can also include referring-site
+  information.
+
+The page can also load the public profile image without a referring-page URL
+and draw a circular copy in your browser for the favicon. The generated copy
+stays in page memory; it is not uploaded or added to local storage.
 
 These requests deliver the page, profile image, repository listing, and icon.
 Hosting providers also process technical information to operate and protect their services.
 Their handling of this information is described in the
-[GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)
-and [Vercel Privacy Notice](https://vercel.com/legal/privacy-notice).
+[GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 
 ## Theme storage and controls
 
-When you use the theme button, the site stores a `theme` preference with the value
-`light` or `dark` in your browser's local storage. The site uses it to remember
-your display choice on later visits. If no choice is stored, the initial theme
-follows your system preference.
+When you use the theme button, the site stores a `myowinthein-landing-theme`
+preference with the value `light` or `dark` in your browser's local storage.
+It remembers your choice across tabs, windows and later visits in the same
+browser profile. A valid choice previously stored under `theme` is moved to
+this project-specific key when no new preference exists.
+
+Without a valid saved choice, the theme follows your browser's system preference,
+including changes while the page is open. A manual choice takes priority over
+system changes. If storage is unavailable, switching still works for the current page.
 
 The site does not set an expiration for this preference. You can remove it by
-clearing this site's local storage or site data in your browser. After removal,
-the next visit follows the system preference until you choose a theme again.
-The page's JavaScript does not send the stored theme value to the GitHub API or
-the favicon host.
+clearing this site's local storage or site data in your browser. Other open tabs
+return to the system preference when they receive that change; the next visit
+also follows it until you choose a theme again. The page's JavaScript does not
+send the stored theme value to the GitHub API or the favicon host.
 
 This browser preference is separate from request records kept by hosting
 providers. Clearing it does not delete their records.
@@ -99,7 +106,7 @@ messages you have sent.
 
 ## Provider records and privacy requests
 
-GitHub, Vercel, and Google describe their retention criteria, privacy contacts,
+GitHub and Google describe their retention criteria, privacy contacts,
 and available controls in the notices linked above. Their services can process
 information in countries other than the country where you live. This notice
 does not promise a particular provider retention period or deletion of records
@@ -113,10 +120,9 @@ handles independently, its privacy notice explains how to contact it.
 ## Linked websites
 
 Project cards and the GitHub profile link lead to other websites. This notice
-covers this landing page, including its request for the portfolio favicon; it
-does not describe all processing on the linked projects, GitHub's website, or the
-full `myowin.dev` portfolio. Review the relevant site's privacy information when
-you visit it.
+covers this landing page and its favicon requests. It does not describe all
+processing on the linked projects, GitHub's website, or the full `myowin.dev`
+portfolio. Review the relevant site's privacy information when you visit it.
 
 ## Changes to this notice
 

@@ -1,6 +1,9 @@
 // The head script selects the initial theme; this script wires up the toggle.
 const root = document.documentElement;
 const btn  = document.getElementById('theme-toggle');
+const THEME_STORAGE_KEY = 'myowinthein-landing-theme';
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+let themeMode = root.getAttribute('data-theme-mode');
 
 function applyTheme(dark) {
   root.setAttribute('data-theme', dark ? 'dark' : 'light');
@@ -10,13 +13,28 @@ function applyTheme(dark) {
   btn.title = label;
 }
 
-applyTheme(root.getAttribute('data-theme') === 'dark');
+function applyThemeMode(mode) {
+  themeMode = mode === 'light' || mode === 'dark' ? mode : 'system';
+  root.setAttribute('data-theme-mode', themeMode);
+  applyTheme(themeMode === 'dark' || (themeMode === 'system' && systemTheme.matches));
+}
+
+applyThemeMode(themeMode);
+
+systemTheme.addEventListener('change', () => {
+  if (themeMode === 'system') applyThemeMode(themeMode);
+});
+
+window.addEventListener('storage', event => {
+  if (event.key !== THEME_STORAGE_KEY && event.key !== null) return;
+  applyThemeMode(event.newValue);
+});
 
 btn.addEventListener('click', () => {
   const isDark = root.getAttribute('data-theme') === 'dark';
-  applyTheme(!isDark);
+  applyThemeMode(isDark ? 'light' : 'dark');
   try {
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    localStorage.setItem(THEME_STORAGE_KEY, themeMode);
   } catch {
     // Keep the visible choice even when it cannot be saved.
   }
@@ -219,6 +237,39 @@ let profileWebsite = '';
 let socialAccounts = [];
 const profileAvatar = document.getElementById('profile-avatar');
 profileAvatar.addEventListener('error', () => { profileAvatar.hidden = true; });
+const favicon = document.getElementById('page-favicon');
+const fallbackFaviconUrl = favicon.getAttribute('href');
+const FAVICON_SIZE = 64;
+let faviconImage;
+
+function updateFavicon(avatarUrl) {
+  if (faviconImage?.src === avatarUrl) return;
+  favicon.setAttribute('href', fallbackFaviconUrl);
+  faviconImage = null;
+  if (!avatarUrl) return;
+
+  const image = new Image();
+  faviconImage = image;
+  image.crossOrigin = 'anonymous';
+  image.referrerPolicy = 'no-referrer';
+  image.onload = () => {
+    if (faviconImage !== image) return;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = FAVICON_SIZE;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      context.beginPath();
+      context.arc(FAVICON_SIZE / 2, FAVICON_SIZE / 2, FAVICON_SIZE / 2, 0, Math.PI * 2);
+      context.clip();
+      context.drawImage(image, 0, 0, FAVICON_SIZE, FAVICON_SIZE);
+      favicon.setAttribute('href', canvas.toDataURL('image/png'));
+    } catch {
+      // Keep the direct GitHub icon if the image cannot be processed.
+    }
+  };
+  image.src = avatarUrl;
+}
 
 function renderProfileLinks() {
   const links = [{ label: 'GitHub', url: GITHUB_PROFILE }];
@@ -243,9 +294,16 @@ function renderProfileLinks() {
 }
 
 function renderProfile(profile) {
-  const avatarUrl = typeof profile.avatar_url === 'string' ? safeUrl(profile.avatar_url, '') : '';
-  if (avatarUrl) profileAvatar.setAttribute('src', avatarUrl);
+  let avatarUrl = typeof profile.avatar_url === 'string' ? safeUrl(profile.avatar_url, '') : '';
+  if (avatarUrl) {
+    const image = new URL(avatarUrl);
+    // Request twice the 72px display size; the favicon can use the same image.
+    if (image.hostname === 'avatars.githubusercontent.com') image.searchParams.set('s', '144');
+    avatarUrl = image.href;
+    profileAvatar.setAttribute('src', avatarUrl);
+  }
   profileAvatar.hidden = !avatarUrl;
+  updateFavicon(avatarUrl);
   const name = typeof profile.name === 'string' && profile.name.trim() ? profile.name.trim() : GITHUB_USER;
   document.getElementById('profile-name').textContent = name;
   const detailFields = ['bio', 'company', 'location'];

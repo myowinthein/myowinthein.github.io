@@ -36,6 +36,9 @@ body {
 }
 
 header {
+  display: flex;
+  flex-direction: column;
+  min-height: 15rem;
   width: 100%;
   max-width: 860px;
   text-align: center;
@@ -43,6 +46,8 @@ header {
   position: relative;
   overflow-wrap: anywhere;
 }
+
+.profile-avatar-slot { flex: 0 0 88px; }
 
 .profile-avatar {
   width: 72px;
@@ -120,11 +125,12 @@ footer a:focus-visible .link-label {
   flex-wrap: wrap;
   justify-content: center;
   gap: 4px 20px;
-  margin-top: 12px;
+  margin-top: auto;
+  padding-top: 12px;
   font-size: 14px;
 }
 
-.profile-links a, .card a, footer a {
+.profile-links a, .card a, footer a, .loading a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -199,6 +205,7 @@ main { width: 100%; max-width: 860px; }
 }
 
 .card-heading {
+  min-height: 44px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -323,16 +330,17 @@ footer a:hover { color: var(--brand); }
 
 @media (prefers-reduced-motion: reduce) {
   body, .theme-toggle, .card { transition: none; }
-  .load-more::after { animation: none; }
+  .load-more[aria-busy="true"]::after { animation: none; }
 }
 
 @media (max-width: 600px) {
+  header { min-height: 19rem; }
   .grid { grid-template-columns: minmax(0, 1fr); }
   header h1 { font-size: 20px; }
 }
 
 @media (min-width: 601px) {
-  body { padding-top: 48px; padding-bottom: 32px; }
+  body { padding-bottom: 32px; }
   header { margin-bottom: 48px; }
   footer { margin-top: 48px; }
 }

@@ -90,11 +90,12 @@ public GitHub repositories as project cards.
 - Background recovery updates stored pages while preserving the cards being browsed;
   the next visit uses those refreshed pages. Profile/social/details can update in place.
   Resume a previously requested uncached batch after recovery without fetching unrequested pages.
-- Theme initialization uses the saved `localStorage.theme` choice when present,
-  otherwise the system preference. Ignore invalid stored values and tolerate denied
-  storage reads/writes so project loading and visible theme changes still work.
-  Keep the initial-theme script synchronous before the stylesheet; root `color-scheme`
-  follows the selected theme for browser-drawn UI.
+- Theme initialization uses `myowinthein-landing-theme` in local storage, migrating
+  a valid legacy `theme` choice only when the new key is absent. Without a valid
+  override, follow system changes live; a manual light/dark choice overrides them.
+  Sync saved choices and cleared overrides across tabs. Denied storage keeps the
+  current choice in memory. Keep the binary button and synchronous head script;
+  root `color-scheme` follows the displayed theme for browser-drawn UI.
 
 ## Behavior Rules
 
@@ -126,10 +127,13 @@ public GitHub repositories as project cards.
   limit. Generic static metadata is intentional for crawlers that do not execute JS.
 - Cache expiry controls freshness, not deletion. Cached public data may stay visible
   when GitHub is unavailable, and entries persist until replaced or cleared.
-- Theme initialization reads the system preference once; it does not listen for later
-  system theme changes.
-- The favicon URL is `https://myowin.dev/favicon.svg`; no local favicon file is tracked.
-  Edit the hosted asset to change its image, or the HTML link to change its location.
+- Request GitHub avatars at 144px for the 72px profile image and circular favicon;
+  preserve other URL parameters and leave other image hosts unchanged. Reserve avatar,
+  profile and release-label space without clipping long content or revealing hidden fields.
+- The favicon starts with `https://github.com/myowinthein.png?size=64`. Profile loading
+  prepares a circular PNG in memory using an anonymous CORS image and canvas, with
+  no referrer. Failed conversion keeps the direct URL; stale image loads cannot
+  overwrite a newer profile's icon. No local favicon file is tracked.
 - The test DOM stub in `test/script.test.cjs` only returns ids listed in `ELEMENT_IDS`,
   and a test requires each one in `index.html`. Add any new id the script reads to both.
 

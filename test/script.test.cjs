@@ -9,10 +9,11 @@ const vm = require('node:vm');
 // declarations (escapeHtml, safeUrl, applyTheme) become properties of the
 // sandbox, so we can test the actual shipped code with no source changes
 // and no npm/jsdom dependency.
+const THEME_STORAGE_KEY = 'myowinthein-landing-theme';
 const ELEMENT_IDS = [
   'grid', 'theme-toggle', 'load-more', 'project-status', 'profile-name', 'profile-bio',
   'profile-location', 'profile-company', 'profile-details', 'profile-links', 'profile-avatar', 'page-description', 'page-og-title', 'page-og-description',
-  'page-twitter-title', 'page-twitter-description',
+  'page-twitter-title', 'page-twitter-description', 'page-favicon',
 ];
 
 function element(tagName, focusState) {
@@ -84,7 +85,14 @@ function loadScript(
   const timers = new Map();
   let nextTimer = 1;
   let elapsed = 0;
-  if (savedTheme !== null) storage.set('theme', savedTheme);
+  const mediaHandlers = new Map();
+  const windowHandlers = new Map();
+  const media = {
+    matches: prefersDark,
+    addEventListener(type, handler) { mediaHandlers.set(type, handler); },
+    change(dark) { this.matches = dark; mediaHandlers.get('change')?.(); },
+  };
+  if (savedTheme !== null) storage.set(THEME_STORAGE_KEY, savedTheme);
   const elements = Object.fromEntries(ELEMENT_IDS.map(id => [id, element(undefined, focusState)]));
   elements['profile-name'].textContent = 'myowinthein';
   elements['profile-bio'].hidden = true;
@@ -92,6 +100,7 @@ function loadScript(
   elements['profile-company'].hidden = true;
   elements['profile-details'].hidden = true;
   elements['profile-avatar'].hidden = true;
+  elements['page-favicon'].setAttribute('href', 'https://github.com/myowinthein.png?size=64');
   elements['profile-links'].innerHTML = '<a class="external-link" href="https://github.com/myowinthein"><span class="link-label">GitHub</span></a>';
   elements.grid.innerHTML = '<p><a class="external-link" href="https://github.com/myowinthein?tab=repositories"><span class="link-label">Browse public repositories</span></a></p>';
   const sandbox = {
@@ -114,10 +123,16 @@ function loadScript(
       },
       createElement: tag => element(tag, focusState),
     },
-    window: { matchMedia() { return { matches: prefersDark }; } },
+    window: {
+      matchMedia() { return media; },
+      addEventListener(type, handler) { windowHandlers.set(type, handler); },
+      dispatchEvent(event) { windowHandlers.get(event.type)?.(event); },
+    },
+    media,
     localStorage: storageApi || {
       getItem(key) { return storage.get(key) ?? null; },
       setItem(key, value) { storage.set(key, value); },
+      removeItem(key) { storage.delete(key); },
     },
     fetch(url) {
       const pathname = new URL(url).pathname;
@@ -128,6 +143,7 @@ function loadScript(
       return profileFetch(url);
     },
     URL,
+    Image: class {},
     Date: class extends Date { static now() { return (typeof now === 'function' ? now() : now) + elapsed; } },
     timers,
     async runNextRetry() {
@@ -176,7 +192,7 @@ for (const scenario of [
     let theme;
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../assets/theme.js'), 'utf8'), {
       // No body, buttons, fetch, or timers exist during this early execution.
-      document: { documentElement: { setAttribute(name, value) { assert.equal(name, 'data-theme'); theme = value; } } },
+      document: { documentElement: { setAttribute(name, value) { if (name === 'data-theme') theme = value; } } },
       window: { matchMedia() { return { matches: scenario.dark }; } },
       localStorage: {
         getItem() { if (scenario.denied) throw new Error('Denied'); return scenario.saved; },
@@ -255,7 +271,7 @@ test('caches all displayed fields together and refreshes them through the existi
   assert.equal(replayRequests, 0);
   const get = id => cached.document.getElementById(id);
   assert.equal(get('profile-company').textContent, 'Cached company');
-  assert.equal(get('profile-avatar').getAttribute('src'), 'https://avatars.githubusercontent.com/u/1234');
+  assert.equal(get('profile-avatar').getAttribute('src'), 'https://avatars.githubusercontent.com/u/1234?s=144');
   assert.match(get('profile-links').innerHTML, /profile.example/);
   assert.match(get('profile-links').innerHTML, /LinkedIn/);
   assert.match(get('grid').innerHTML, /Cached description/);
@@ -268,7 +284,7 @@ test('caches all displayed fields together and refreshes them through the existi
   assert.equal(requests.length, 10);
   const fresh = id => refreshed.document.getElementById(id);
   assert.equal(fresh('profile-company').textContent, 'Updated company');
-  assert.equal(fresh('profile-avatar').getAttribute('src'), 'https://avatars.githubusercontent.com/u/5678');
+  assert.equal(fresh('profile-avatar').getAttribute('src'), 'https://avatars.githubusercontent.com/u/5678?s=144');
   assert.match(fresh('grid').innerHTML, /Updated description/);
   assert.match(fresh('grid').innerHTML, /href="https:\/\/updated.example\/"/);
   assert.doesNotMatch(fresh('grid').innerHTML, /card-status|Cached description/);
@@ -690,10 +706,10 @@ for (const corruption of ['invalid JSON', 'missing timestamp', 'future timestamp
 }
 
 test('does not cache failed requests or change unrelated browser storage', async () => {
-  const storage = new Map([['theme', 'dark'], ['other-app-key', 'keep']]);
+  const storage = new Map([[THEME_STORAGE_KEY, 'dark'], ['other-app-key', 'keep']]);
   const sandbox = loadScript(undefined, { storage });
   await sandbox.ready;
-  assert.deepEqual(Array.from(storage), [['theme', 'dark'], ['other-app-key', 'keep']]);
+  assert.deepEqual(Array.from(storage), [[THEME_STORAGE_KEY, 'dark'], ['other-app-key', 'keep']]);
 });
 
 test('continues displaying fresh data when the cache cannot be written', async () => {
@@ -807,10 +823,10 @@ test('persists theme toggles and restores the choice on reload', async () => {
   button.click();
   assert.equal(root.getAttribute('data-theme'), 'dark');
   assert.equal(button.getAttribute('aria-label'), 'Switch to light theme');
-  assert.equal(storage.get('theme'), 'dark');
+  assert.equal(storage.get(THEME_STORAGE_KEY), 'dark');
   button.click();
   assert.equal(root.getAttribute('data-theme'), 'light');
-  assert.equal(storage.get('theme'), 'light');
+  assert.equal(storage.get(THEME_STORAGE_KEY), 'light');
 
   const reloaded = loadScript(undefined, { storage, prefersDark: true });
   await reloaded.ready;
@@ -846,6 +862,107 @@ test('ignores an invalid saved theme in favor of the system preference', async (
   const sandbox = loadScript(undefined, { savedTheme: 'invalid', prefersDark: true });
   await sandbox.ready;
   assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
+});
+
+test('automatic theme follows system changes without storing an override', async () => {
+  const storage = new Map();
+  const sandbox = loadScript(undefined, { storage });
+  await sandbox.ready;
+  sandbox.media.change(true);
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
+  sandbox.media.change(false);
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'light');
+  assert.equal(storage.has(THEME_STORAGE_KEY), false);
+});
+
+for (const savedTheme of ['light', 'dark']) {
+  test(`explicit ${savedTheme} stays selected when the system changes`, async () => {
+    const sandbox = loadScript(undefined, { savedTheme, prefersDark: savedTheme === 'dark' });
+    await sandbox.ready;
+    sandbox.media.change(savedTheme !== 'dark');
+    assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), savedTheme);
+  });
+}
+
+test('storage events synchronize tabs, ignore sibling projects and restore automatic mode', async () => {
+  const sandbox = loadScript();
+  await sandbox.ready;
+  const root = sandbox.document.documentElement;
+  const changed = (key, newValue) => sandbox.window.dispatchEvent({ type: 'storage', key, newValue });
+  changed(THEME_STORAGE_KEY, 'dark');
+  assert.equal(root.getAttribute('data-theme'), 'dark');
+  assert.equal(sandbox.document.getElementById('theme-toggle').getAttribute('aria-label'), 'Switch to light theme');
+  changed('agent-helm-theme', 'light');
+  changed('agent-compass-theme', 'light');
+  changed('theme', 'light');
+  assert.equal(root.getAttribute('data-theme'), 'dark');
+  changed(THEME_STORAGE_KEY, null);
+  assert.equal(root.getAttribute('data-theme-mode'), 'system');
+  assert.equal(root.getAttribute('data-theme'), 'light');
+  sandbox.media.change(true);
+  assert.equal(root.getAttribute('data-theme'), 'dark');
+  changed(THEME_STORAGE_KEY, 'light');
+  changed(THEME_STORAGE_KEY, 'invalid');
+  assert.equal(root.getAttribute('data-theme'), 'dark');
+  changed(THEME_STORAGE_KEY, 'light');
+  changed(null, null);
+  assert.equal(root.getAttribute('data-theme'), 'dark');
+});
+
+test('a manual choice remains in memory when storage is blocked and the system changes', async () => {
+  const sandbox = loadScript(undefined, {
+    storageApi: { getItem() { throw new Error('Denied'); }, setItem() { throw new Error('Denied'); } },
+  });
+  await sandbox.ready;
+  sandbox.media.change(true);
+  sandbox.document.getElementById('theme-toggle').click();
+  sandbox.media.change(false);
+  sandbox.media.change(true);
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'light');
+});
+
+for (const legacy of ['light', 'dark']) {
+  test(`migrates the old ${legacy} preference without losing it or changing sibling preferences`, async () => {
+    const storage = new Map([['theme', legacy], ['agent-helm-theme', 'dark'], ['agent-compass-theme', 'light']]);
+    const sandbox = loadScript(undefined, { storage, prefersDark: legacy !== 'dark' });
+    await sandbox.ready;
+    assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), legacy);
+    assert.equal(storage.get(THEME_STORAGE_KEY), legacy);
+    assert.equal(storage.has('theme'), false);
+    assert.equal(storage.get('agent-helm-theme'), 'dark');
+    assert.equal(storage.get('agent-compass-theme'), 'light');
+    storage.delete(THEME_STORAGE_KEY);
+    const reloaded = loadScript(undefined, { storage, prefersDark: true });
+    await reloaded.ready;
+    assert.equal(reloaded.document.documentElement.getAttribute('data-theme-mode'), 'system');
+  });
+}
+
+for (const savedTheme of ['dark', 'invalid']) {
+  test(`new ${savedTheme} preference takes precedence over the legacy value`, async () => {
+    const sandbox = loadScript(undefined, { savedTheme, storage: new Map([['theme', 'light']]), prefersDark: true });
+    await sandbox.ready;
+    assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
+    assert.equal(sandbox.document.documentElement.getAttribute('data-theme-mode'), savedTheme === 'dark' ? 'dark' : 'system');
+  });
+}
+
+test('a failed migration keeps the legacy preference available in memory and storage', async () => {
+  const storage = new Map([['theme', 'light']]);
+  const sandbox = loadScript(undefined, {
+    prefersDark: true,
+    storageApi: {
+      getItem(key) { return storage.get(key) ?? null; },
+      setItem() { throw new Error('Quota exceeded'); },
+      removeItem() { assert.fail('Do not remove the legacy choice before it is saved'); },
+    },
+  });
+  await sandbox.ready;
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'light');
+  sandbox.media.change(false);
+  sandbox.media.change(true);
+  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'light');
+  assert.equal(storage.get('theme'), 'light');
 });
 
 test('index.html provides every element the script reads and keeps scripts and styles external', () => {
@@ -936,7 +1053,7 @@ test('loads the introduction, metadata, website, and social links from public Gi
   });
   await sandbox.ready;
   const get = id => sandbox.document.getElementById(id);
-  assert.equal(get('profile-avatar').getAttribute('src'), 'https://avatars.githubusercontent.com/u/1234');
+  assert.equal(get('profile-avatar').getAttribute('src'), 'https://avatars.githubusercontent.com/u/1234?s=144');
   assert.equal(get('profile-avatar').hidden, false);
   assert.equal(get('profile-name').textContent, 'Current GitHub Name');
   assert.equal(get('profile-bio').textContent, 'Current GitHub bio.');
@@ -988,6 +1105,18 @@ test('treats profile text as plain text and validates and escapes social URLs an
   assert.match(links, /&lt;img src=x&gt;/);
   assert.doesNotMatch(links, /javascript:|data:|<img|Website/);
 });
+
+for (const [source, expected] of [
+  ['https://avatars.githubusercontent.com/u/1234?v=4&s=460', 'https://avatars.githubusercontent.com/u/1234?v=4&s=144'],
+  ['https://images.example/avatar.png?size=460', 'https://images.example/avatar.png?size=460'],
+  ['https://avatars.githubusercontent.com.example/avatar.png', 'https://avatars.githubusercontent.com.example/avatar.png'],
+]) {
+  test(`sizes only GitHub avatar images and preserves their other parameters: ${source}`, async () => {
+    const sandbox = loadScript(undefined, { profileFetch: async () => response({ avatar_url: source }) });
+    await sandbox.ready;
+    assert.equal(sandbox.document.getElementById('profile-avatar').getAttribute('src'), expected);
+  });
+}
 
 test('hides a failed avatar image without changing the profile', async () => {
   const sandbox = loadScript(undefined, {
