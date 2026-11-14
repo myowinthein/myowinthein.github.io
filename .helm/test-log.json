@@ -440,8 +440,24 @@
       "reason": "Writing the button's textContent again would erase both icons and leave a blank button for sighted users while its label and click behavior still work; the failure is visible and recoverable.",
       "action": "add",
       "layer": "component",
-      "state": "open",
-      "assessed_commit": "fbba0b6092fbf2d02aba86e12cf6986313908960"
+      "state": "resolved",
+      "assessed_commit": "fbba0b6092fbf2d02aba86e12cf6986313908960",
+      "tests": [
+        "test/script.test.cjs::keeps the theme toggle icons when the theme changes",
+        "test/script.test.cjs::index.html theme toggle holds hidden moon and sun icons and keeps its accessible name"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::keeps the theme toggle icons when the theme changes",
+          "test/script.test.cjs::index.html theme toggle holds hidden moon and sun icons and keeps its accessible name"
+        ],
+        "method": "runtime",
+        "outcome": "Both new tests pass: 134 tests, 134 pass, 0 fail, 0 skipped, 0 todo. With a temporary textContent write in applyTheme and the sun icon's aria-hidden removed, both new tests failed and the other 132 passed; sources were restored before commit.",
+        "commit": "5d4a7fd123a722b879cdf10b1bbf884728efb2b7",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Node.js VM component tests and a static read of index.html in the project root; synthetic stubs only, no browser rendering."
+      }
     }
   ]
 }
