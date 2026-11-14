@@ -10,6 +10,8 @@ const vm = require('node:vm');
 // sandbox, so we can test the actual shipped code with no source changes
 // and no npm/jsdom dependency.
 const THEME_STORAGE_KEY = 'myowinthein-landing-theme';
+const CACHE_PREFIX = 'github-directory:v1:myowinthein:';
+const RATE_LIMIT_KEY = `${CACHE_PREFIX}retry-after`;
 const ELEMENT_IDS = [
   'grid', 'theme-toggle', 'load-more', 'project-status', 'profile-name', 'profile-bio',
   'profile-location', 'profile-company', 'profile-details', 'profile-links', 'profile-avatar', 'page-description', 'page-og-title', 'page-og-description',
@@ -366,7 +368,7 @@ test('retains expired data quietly and refreshes its cache in the background', a
   await sandbox.runNextRetry();
   assert.deepEqual(pages, ['1', '1']);
   assert.deepEqual(get('grid').children, initialNodes);
-  const entry = JSON.parse(storage.get('github-directory:v1:myowinthein:' + sandbox.projectPageUrl(1)));
+  const entry = JSON.parse(storage.get(CACHE_PREFIX + sandbox.projectPageUrl(1)));
   assert.equal(entry.data[0].name, 'recovered-project');
   assert.equal(entry.savedAt, CACHE_TEST_TIME + 360_000);
   assert.equal(cardCount(get('grid').innerHTML), 1);
@@ -445,7 +447,7 @@ test('backs off silently across reloads without renewing stale data, then retrie
   await sandbox.runNextRetry();
   assert.equal(requests, 2);
   assert.equal(get('load-more').hidden, true);
-  const entry = JSON.parse(storage.get('github-directory:v1:myowinthein:' + sandbox.projectPageUrl(1)));
+  const entry = JSON.parse(storage.get(CACHE_PREFIX + sandbox.projectPageUrl(1)));
   assert.equal(entry.data[0].name, 'recovered');
   assert.equal(entry.savedAt, reset + 1000);
 });
@@ -509,7 +511,7 @@ test('does not mistake an ordinary forbidden response for a rate limit', async (
 test('uses fresh cached content even while a persisted rate limit blocks the API', async () => {
   const storage = new Map();
   await seedCache(storage);
-  storage.set('github-directory:v1:myowinthein:retry-after', String(CACHE_TEST_TIME + 600_000));
+  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + 600_000));
   let requests = 0;
   const unexpected = async () => { requests += 1; throw new Error('Cached data requested the API'); };
   const sandbox = loadScript(unexpected, {
@@ -529,7 +531,7 @@ test('Load more browses every expired cached batch during a rate limit without A
   await seed.ready;
   await seed.document.getElementById('load-more').click();
   await seed.document.getElementById('load-more').click();
-  storage.set('github-directory:v1:myowinthein:retry-after', String(CACHE_TEST_TIME + 600_000));
+  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + 600_000));
   const before = new Map(storage);
   let requests = 0;
   const unexpected = async () => { requests += 1; throw new Error('Request before reset'); };
@@ -562,7 +564,7 @@ test('hides an uncached next batch during a limit and restores Load more after b
   const repositories = Array.from({ length: 7 }, (_, i) => repo(`saved-${i}`));
   const seed = loadScript(paginatedFetch(repositories), { storage, now: CACHE_TEST_TIME });
   await seed.ready;
-  storage.set('github-directory:v1:myowinthein:retry-after', String(CACHE_TEST_TIME + 600_000));
+  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + 600_000));
   const requests = [];
   const sandbox = loadScript(paginatedFetch(repositories, requests), { storage, now: CACHE_TEST_TIME + 300_000 });
   await sandbox.ready;
@@ -701,7 +703,7 @@ test('preserves a successful last-budget response and suppresses optional API re
 
 for (const saved of ['invalid', 'Infinity', '-1', String(CACHE_TEST_TIME - 1), String(CACHE_TEST_TIME + 172_800_000)]) {
   test(`ignores an invalid or expired saved retry deadline: ${saved}`, async () => {
-    const storage = new Map([['github-directory:v1:myowinthein:retry-after', saved]]);
+    const storage = new Map([[RATE_LIMIT_KEY, saved]]);
     let requests = 0;
     const sandbox = loadScript(async () => { requests += 1; return response([repo('available')]); }, {
       storage, now: CACHE_TEST_TIME,
@@ -838,7 +840,7 @@ test('continues browsing stale cached pages while a background refresh preserves
   assert.deepEqual(pages, ['1', '2', '2']);
   assert.equal(cardCount(get('grid').innerHTML), 12);
   assert.deepEqual(get('grid').children.slice(0, 6), initialCards);
-  const entry = JSON.parse(storage.get('github-directory:v1:myowinthein:' + nextVisit.projectPageUrl(2)));
+  const entry = JSON.parse(storage.get(CACHE_PREFIX + nextVisit.projectPageUrl(2)));
   assert.equal(entry.data[0].name, 'updated-6');
   assert.equal(entry.savedAt, CACHE_TEST_TIME + 360_000);
 });
@@ -1581,7 +1583,7 @@ test('caches licenses, preserves a focused link during refresh, and keeps stale 
 test('validates cached licenses and renders live licenses when storage is blocked', async () => {
   for (const blocked of [false, true]) {
     const storage = new Map();
-    const key = 'github-directory:v1:myowinthein:https://api.github.com/repos/myowinthein/sample/license';
+    const key = `${CACHE_PREFIX}https://api.github.com/repos/myowinthein/sample/license`;
     storage.set(key, JSON.stringify({ data: license({ html_url: 'data:text/html,unsafe' }), link: '', savedAt: CACHE_TEST_TIME }));
     let requests = 0;
     const sandbox = loadScript(paginatedFetch([repo('sample', { license: { spdx_id: 'MIT' } })]), {
@@ -1724,7 +1726,7 @@ test('caches release responses, refreshes expired versions, and retains them aft
 test('revalidates cached releases and loads releases even when browser storage is blocked', async () => {
   for (const blocked of [false, true]) {
     const storage = new Map();
-    const key = 'github-directory:v1:myowinthein:https://api.github.com/repos/myowinthein/sample/releases/latest';
+    const key = `${CACHE_PREFIX}https://api.github.com/repos/myowinthein/sample/releases/latest`;
     storage.set(key, JSON.stringify({ data: release({ html_url: 'javascript:alert(1)' }), link: '', savedAt: CACHE_TEST_TIME }));
     let requests = 0;
     const sandbox = loadScript(paginatedFetch([repo('sample')]), {
