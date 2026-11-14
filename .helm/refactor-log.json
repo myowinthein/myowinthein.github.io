@@ -464,8 +464,26 @@
         ],
         "invariant": "Every test keeps its scenario, inputs and assertions; the literal persisted format stays asserted once (line 279) so a key change in the script still fails a test."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "a3e0777aa563aa4ef3be32a652a5e65880223546",
+        "date": "2026-11-15",
+        "method": "runtime",
+        "evidence": [
+          "test/script.test.cjs: CACHE_PREFIX and RATE_LIMIT_KEY constants replace nine of the ten repeated github-directory:v1:myowinthein: literals; line 281 still asserts the literal format",
+          "With the script prefix temporarily changed to v2, 7 tests failed, so the persisted key format stays pinned; the script was restored before committing"
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js assets/theme.js; node --test test/script.test.cjs",
+            "scope": "Node.js VM component tests in the project root; synthetic DOM and fetch stubs; no network or real browser",
+            "outcome": "Syntax checks passed; 134 tests passed with 0 failures, skips or todos, same as the baseline before the change"
+          }
+        ]
+      }
     },
     {
       "id": "r-270b2a81-9fb3-4bf8-9934-4411d382ea21",
