@@ -865,6 +865,17 @@ test('persists theme toggles and restores the choice on reload', async () => {
   assert.equal(reloaded.document.documentElement.getAttribute('data-theme'), 'light');
 });
 
+test('keeps the theme toggle icons when the theme changes', async () => {
+  const sandbox = loadScript();
+  await sandbox.ready;
+  const button = sandbox.document.getElementById('theme-toggle');
+  button.innerHTML = '<svg class="theme-icon-moon"></svg><svg class="theme-icon-sun"></svg>';
+  const icons = button.innerHTML;
+  button.click();
+  button.click();
+  assert.equal(button.innerHTML, icons);
+});
+
 test('loads projects and uses the system theme when storage reads are blocked', async () => {
   const requests = [];
   const sandbox = loadScript(paginatedFetch([repo('available-project')], requests), {
@@ -1006,6 +1017,13 @@ test('index.html provides every element the script reads and keeps scripts and s
   assert.ok(html.indexOf('src="assets/theme.js"') < html.indexOf('<body>'));
   assert.match(html, /<link rel="stylesheet" href="assets\/style\.css">/);
   assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)|<style/i);
+});
+
+test('index.html theme toggle holds hidden moon and sun icons and keeps its accessible name', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  const toggle = html.match(/<button class="theme-toggle" id="theme-toggle"[^>]*>([\s\S]*?)<\/button>/);
+  assert.match(toggle[0], /aria-label="Switch to dark theme"/);
+  assert.match(toggle[1], /<svg class="theme-icon-moon"[^>]*aria-hidden="true"[\s\S]*<svg class="theme-icon-sun"[^>]*aria-hidden="true"/);
 });
 
 test('index.html footer marks the issue chooser as external and keeps the privacy notice internal', () => {
