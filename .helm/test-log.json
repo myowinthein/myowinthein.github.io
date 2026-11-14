@@ -265,6 +265,31 @@
       }
     },
     {
+      "id": "g-a47e0af1-3eab-4885-bf96-2ae2723e7b5d",
+      "expected": "In a real browser at 320, 390 and 1280px in light and dark themes: the theme toggle shows the moon in light and the sun in dark, stays at least 44px square, link hover and focus show a thicker underline without shifting layout, and Load more shows the progress cursor while loading.",
+      "basis": [
+        "assets/style.css: .theme-toggle, .theme-icon-sun, [data-theme=\"dark\"] icon rules, a:is(:hover, :focus-visible) underline thickness, .load-more[aria-busy=\"true\"] cursor",
+        "index.html theme-toggle SVG icons",
+        "AGENTS.md: keep links underlined and interactive controls at least 44px",
+        "test/script.test.cjs runs in a VM with DOM stubs, so painting, icon swap and cursor cannot be verified there; g-edd984a0 sign-off predates the theme icon change"
+      ],
+      "paths": [
+        "assets/style.css",
+        "index.html",
+        "assets/script.js"
+      ],
+      "priority": "low",
+      "reason": "Icon swap, tap-target size, hover styling and cursor need a real browser and human acceptance; automation cannot sign them off.",
+      "action": "manual",
+      "layer": "manual",
+      "state": "open",
+      "assessed_commit": "fbba0b6092fbf2d02aba86e12cf6986313908960",
+      "blocker": {
+        "kind": "verification",
+        "note": "Needs a real-browser check by the developer; not yet performed."
+      }
+    },
+    {
       "id": "g-b4cadd14-fd5f-4166-8686-b8dbea6aaa0d",
       "expected": "index.html provides every element ID that assets/script.js reads, links the external script and stylesheet, and contains no inline script or style blocks.",
       "basis": [
@@ -396,6 +421,27 @@
         "commit": "50a7624a142d47b818acc16a3b9c01027912625a",
         "scope": "Chrome on the developer's machine, widths 320/390/1280px, light and dark themes, local preview with controlled responses; not the deployed site"
       }
+    },
+    {
+      "id": "g-f9007826-ff7f-4e5a-9ea9-44e9b86de323",
+      "expected": "Switching the theme leaves the theme toggle's moon and sun icons in place, and the toggle in index.html contains both icons hidden from assistive technology plus its accessible name.",
+      "basis": [
+        "assets/script.js:8-13 (applyTheme sets only aria-label and title since the theme icon change)",
+        "index.html theme-toggle button with .theme-icon-moon and .theme-icon-sun SVGs; assets/style.css swaps them on [data-theme]",
+        "AGENTS.md: Known Traps (theme toggle icons are inline SVGs; setting textContent would remove them)",
+        "test/script.test.cjs never seeds the toggle's content, so a textContent write would pass all current tests"
+      ],
+      "paths": [
+        "assets/script.js",
+        "index.html",
+        "test/script.test.cjs"
+      ],
+      "priority": "low",
+      "reason": "Writing the button's textContent again would erase both icons and leave a blank button for sighted users while its label and click behavior still work; the failure is visible and recoverable.",
+      "action": "add",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "fbba0b6092fbf2d02aba86e12cf6986313908960"
     }
   ]
 }
