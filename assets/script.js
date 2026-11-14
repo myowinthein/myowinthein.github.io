@@ -576,7 +576,6 @@ async function loadMoreProjects() {
     projectStatus.textContent = count && !hasMore
       ? `All ${count} ${count === 1 ? 'project' : 'projects'} loaded.`
       : '';
-    loadMore.textContent = 'Load more';
   } catch {
     if (displayedProjects.length) showProjectBatch([]);
     else grid.innerHTML = fallbackProjects;
