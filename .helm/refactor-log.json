@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "assessed_commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
-  "full_scan_commit": "b75b6a3b28a2746adc535603ad8e8d7bd5706422",
+  "assessed_commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+  "full_scan_commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
   "findings": [
     {
       "id": "r-13c9a457-50c1-4038-8b19-9fe24c3ca2c3",
@@ -341,6 +341,124 @@
           }
         ]
       }
+    },
+    {
+      "id": "r-3b2676eb-937b-46e1-b455-020f51fbba1f",
+      "category": "Code Quality",
+      "summary": "The default one-minute GitHub retry delay is written as three separate literals in two notations, and the stored-deadline cap and the setTimeout limit are unnamed.",
+      "paths": [
+        "assets/script.js",
+        "test/script.test.cjs"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15",
+        "priority": "low",
+        "risk": "safe",
+        "reason": "The delay is one piece of knowledge (the default and base retry delay) kept in three places, so changing it needs three edits and a search for 60_000 misses the 60 * 1000 sites. A named constant also explains the two unnamed numeric limits.",
+        "evidence": [
+          "assets/script.js:72: queueGitHubRetry uses Date.now() + 60_000 as the default retry time and 60_000 * 2 ** attempts as the backoff",
+          "assets/script.js:136 and 212: responseRetryAt and requestGitHub use Date.now() + 60 * 1000 as the default rate-limit wait",
+          "assets/script.js:63 and 106: 2_147_483_647 (the largest setTimeout delay) and 24 * 60 * 60 * 1000 (the stored-deadline cap) are unnamed",
+          "test/script.test.cjs: honors GitHub backoff for missing 429 headers, malformed reset headers and the secondary limit message (60_000), and bounds temporary background retries with increasing delays (60_000, 120_000, 240_000) pin the values"
+        ],
+        "invariant": "Keep every delay value, the 1 s margin after a reset, the three-retry budget, the 24-hour cap on stored deadlines and the setTimeout clamp exactly as they are; only name the repeated values."
+      },
+      "state": "open",
+      "depends_on": []
+    },
+    {
+      "id": "r-8ba6eb29-7eb8-4b5d-83a0-009e97eae6a5",
+      "category": "Code Quality",
+      "summary": "loadMoreProjects sets loadMore.textContent to 'Load more' twice, once at the end of the try block and again in the finally block that always runs afterwards.",
+      "paths": [
+        "assets/script.js"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15",
+        "priority": "low",
+        "risk": "safe",
+        "reason": "The try-block assignment is overwritten by the finally block before anything reads it, so a reader has to check both to learn where the button text is restored. Removing the redundant line leaves one place.",
+        "evidence": [
+          "assets/script.js:579 sets loadMore.textContent = 'Load more' at the end of the try block; the finally block at line 588 sets the same value on every path",
+          "No code between lines 579 and 588 reads the button text and the catch block does not change it",
+          "test/script.test.cjs: ignores repeated load requests while an API page is in flight and keeps a quiet GitHub fallback when ... assert the text during and after loading"
+        ],
+        "invariant": "The button text stays 'Load more' during loading, after success and after failure; aria-label, aria-busy, aria-disabled and focus handling are unchanged."
+      },
+      "state": "open",
+      "depends_on": []
+    },
+    {
+      "id": "r-9f6ad25e-a18c-43d7-bb18-bf75c94f6eb9",
+      "category": "Tests",
+      "summary": "The test file spells the persisted cache key prefix 'github-directory:v1:myowinthein:' out in ten places, including four copies of the retry-after key.",
+      "paths": [
+        "test/script.test.cjs"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15",
+        "priority": "low",
+        "risk": "safe",
+        "reason": "A change to the stored key format means ten coordinated test edits; one named constant for the prefix and the retry-after key keeps that knowledge in one place while one test still asserts the literal format.",
+        "evidence": [
+          "test/script.test.cjs:279, 369, 448, 512, 532, 565, 704, 841, 1584 and 1727 repeat the prefix; 512, 532, 565 and 704 repeat the retry-after key",
+          "assets/script.js:47-49 defines CACHE_PREFIX and RATE_LIMIT_KEY as top-level consts, which are not visible on the VM sandbox, so the test needs its own constant",
+          "AGENTS.md records the key prefix github-directory:v1:myowinthein: as a persisted contract"
+        ],
+        "invariant": "Every test keeps its scenario, inputs and assertions; the literal persisted format stays asserted once (line 279) so a key change in the script still fails a test."
+      },
+      "state": "open",
+      "depends_on": []
+    },
+    {
+      "id": "r-270b2a81-9fb3-4bf8-9934-4411d382ea21",
+      "category": "Code Quality",
+      "summary": "Three stylesheet rule pairs repeat the same muted link colour with a brand colour on hover: .card-release a, .card-license a and footer a.",
+      "paths": [
+        "assets/style.css"
+      ],
+      "found": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+        "date": "2026-11-15",
+        "priority": "low",
+        "risk": "needs-review",
+        "reason": "The rule 'secondary link: muted at rest, brand on hover' lives in three places, so changing it needs three coordinated edits. One grouped selector would keep each selector's own specificity.",
+        "evidence": [
+          "assets/style.css:233-235 (.card-release a), 265-267 (.card-license a) and 338-339 (footer a) set color: var(--muted) and color: var(--brand) on hover identically",
+          "No other rule sets link colour in those scopes, so grouping the selectors does not change the cascade result; the cascade order relative to the 'a' rule on line 84 stays the same",
+          "test/script.test.cjs runs in a VM without CSS, so rendering is not covered by automation; the open manual case for the theme toggle, hover and cursor covers a real-browser check"
+        ],
+        "invariant": "Keep the muted rest colour and brand hover colour for release links, license links and footer links in both themes, with specificity unchanged; the underline, focus and 44px target rules stay as they are."
+      },
+      "state": "open",
+      "depends_on": []
     }
   ]
 }
