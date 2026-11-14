@@ -399,8 +399,26 @@
         ],
         "invariant": "The button text stays 'Load more' during loading, after success and after failure; aria-label, aria-busy, aria-disabled and focus handling are unchanged."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "bc12748c75b41875fdbe38521290c1b144ac9a7e",
+        "date": "2026-11-15",
+        "method": "runtime",
+        "evidence": [
+          "assets/script.js: the try-block assignment loadMore.textContent = \"Load more\" at the end of loadMoreProjects was removed; the finally block still sets it on every path",
+          "The loading, failure, focus and fallback tests passed unchanged"
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js assets/theme.js; node --test test/script.test.cjs",
+            "scope": "Node.js VM component tests in the project root; synthetic DOM and fetch stubs; no network or real browser",
+            "outcome": "Syntax checks passed; 134 tests passed with 0 failures, skips or todos, same as the baseline before the change"
+          }
+        ]
+      }
     },
     {
       "id": "r-9f6ad25e-a18c-43d7-bb18-bf75c94f6eb9",
