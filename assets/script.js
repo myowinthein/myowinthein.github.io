@@ -46,6 +46,9 @@ const USER_API = `https://api.github.com/users/${GITHUB_USER}`;
 const GITHUB_PROFILE = `https://github.com/${GITHUB_USER}`;
 const CACHE_PREFIX = `github-directory:v1:${GITHUB_USER}:`;
 const CACHE_TTL = 5 * 60 * 1000;
+const DEFAULT_RETRY_DELAY = 60 * 1000;
+const MAX_STORED_RETRY_WINDOW = 24 * 60 * 60 * 1000;
+const MAX_TIMER_DELAY = 2_147_483_647;
 const RATE_LIMIT_KEY = `${CACHE_PREFIX}retry-after`;
 let rateLimitUntil = 0;
 const githubRetries = new Map();
@@ -60,7 +63,7 @@ function scheduleGitHubRetries() {
   if (blockedUntil) deadlines.push(blockedUntil);
   if (!deadlines.length) return;
   githubRetryTimer = setTimeout(retryGitHubRequests,
-    Math.min(Math.max(0, Math.min(...deadlines) - Date.now()), 2_147_483_647));
+    Math.min(Math.max(0, Math.min(...deadlines) - Date.now()), MAX_TIMER_DELAY));
 }
 
 function queueGitHubRetry(url, validate, onRefresh, error, attempts = 0) {
@@ -69,7 +72,8 @@ function queueGitHubRetry(url, validate, onRefresh, error, attempts = 0) {
   if (attempts >= 3 || (error.status >= 400 && error.status < 500 && !(error instanceof GitHubRateLimitError))) return;
   githubRetries.set(url, {
     validate, onRefresh, attempts,
-    retryAt: Math.max(error.retryAt || Date.now() + 60_000, attempts ? Date.now() + 60_000 * 2 ** attempts : 0),
+    retryAt: Math.max(error.retryAt || Date.now() + DEFAULT_RETRY_DELAY,
+      attempts ? Date.now() + DEFAULT_RETRY_DELAY * 2 ** attempts : 0),
   });
   scheduleGitHubRetries();
 }
@@ -103,7 +107,7 @@ class GitHubRateLimitError extends Error {
 function githubRetryAt() {
   try {
     const saved = Number(localStorage.getItem(RATE_LIMIT_KEY));
-    if (Number.isFinite(saved) && saved > Date.now() && saved <= Date.now() + 24 * 60 * 60 * 1000) {
+    if (Number.isFinite(saved) && saved > Date.now() && saved <= Date.now() + MAX_STORED_RETRY_WINDOW) {
       rateLimitUntil = Math.max(rateLimitUntil, saved);
     }
   } catch {
@@ -133,7 +137,7 @@ function responseRetryAt(response) {
   const reset = exhausted ? Number(get('X-RateLimit-Reset')) * 1000 : 0;
   if (!exhausted && !(limited && (response.status === 429 || Number.isFinite(delay)))) return 0;
   const deadlines = [delay, reset].filter(value => Number.isFinite(value) && value > Date.now());
-  return deadlines.length ? Math.max(...deadlines) + 1000 : Date.now() + 60 * 1000;
+  return deadlines.length ? Math.max(...deadlines) + 1000 : Date.now() + DEFAULT_RETRY_DELAY;
 }
 
 function escapeHtml(str) {
@@ -209,7 +213,7 @@ async function requestGitHub(url, validate) {
       try {
         const error = await response.json();
         if (typeof error?.message === 'string' && /rate limit/i.test(error.message)) {
-          retryAt = Date.now() + 60 * 1000;
+          retryAt = Date.now() + DEFAULT_RETRY_DELAY;
         }
       } catch {
         // An ordinary HTTP error does not establish a rate limit.
