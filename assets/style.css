@@ -231,8 +231,9 @@ main { width: 100%; max-width: 860px; }
 }
 
 .card-release { min-width: 0; font-size: 12px; }
-.card-release a { color: var(--muted); }
-.card-release a:hover { color: var(--brand); }
+
+.card-release a, .card-license a, footer a { color: var(--muted); }
+.card-release a:hover, .card-license a:hover, footer a:hover { color: var(--brand); }
 
 .card-status {
   margin-inline-start: auto;
@@ -263,8 +264,6 @@ main { width: 100%; max-width: 860px; }
 }
 
 .card-license { min-width: 0; font-size: 12px; }
-.card-license a { color: var(--muted); }
-.card-license a:hover { color: var(--brand); }
 
 .loading {
   color: var(--muted);
@@ -334,9 +333,6 @@ footer {
   font-size: 12px;
   color: var(--muted);
 }
-
-footer a { color: var(--muted); }
-footer a:hover { color: var(--brand); }
 
 @media (prefers-reduced-motion: reduce) {
   body, .theme-toggle, .card { transition: none; }
