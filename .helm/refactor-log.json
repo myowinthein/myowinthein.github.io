@@ -511,8 +511,20 @@
         ],
         "invariant": "Keep the muted rest colour and brand hover colour for release links, license links and footer links in both themes, with specificity unchanged; the underline, focus and 44px target rules stay as they are."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "dd5ed87d445dd2c4690cf4f98ea6ffb802d8e5ff",
+        "date": "2026-11-15",
+        "method": "static",
+        "evidence": [
+          "assets/style.css: .card-release a, .card-license a and footer a now share one muted rule and one brand hover rule; the two duplicate pairs were removed",
+          "A scripted comparison of the old and new color rules gave the same winning colour at rest and on hover for release, license and footer links, with each selector's specificity unchanged (0,1,1; 0,1,1; 0,0,2 at rest)",
+          "The test suite does not load CSS (134 tests passed unchanged), so rendering was not checked in a browser; the open manual test case covers a real-browser look and was not performed"
+        ]
+      }
     }
   ]
 }
