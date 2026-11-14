@@ -370,8 +370,26 @@
         ],
         "invariant": "Keep every delay value, the 1 s margin after a reset, the three-retry budget, the 24-hour cap on stored deadlines and the setTimeout clamp exactly as they are; only name the repeated values."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "994027239a7ae738d6f1481ccebb497603b2640b",
+        "date": "2026-11-15",
+        "method": "runtime",
+        "evidence": [
+          "assets/script.js: DEFAULT_RETRY_DELAY, MAX_STORED_RETRY_WINDOW and MAX_TIMER_DELAY replace the repeated 60_000, 60 * 1000, 24 * 60 * 60 * 1000 and 2_147_483_647 literals; every value is unchanged",
+          "The backoff, Retry-After, malformed-header, stored-deadline cap and bounded-retry tests passed unchanged"
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js assets/theme.js; node --test test/script.test.cjs",
+            "scope": "Node.js VM component tests in the project root; synthetic DOM and fetch stubs; no network or real browser",
+            "outcome": "Syntax checks passed; 134 tests passed with 0 failures, skips or todos, same as the baseline before the change"
+          }
+        ]
+      }
     },
     {
       "id": "r-8ba6eb29-7eb8-4b5d-83a0-009e97eae6a5",
