@@ -7,7 +7,6 @@ let themeMode = root.getAttribute('data-theme-mode');
 
 function applyTheme(dark) {
   root.setAttribute('data-theme', dark ? 'dark' : 'light');
-  btn.textContent = dark ? '☀︎' : '☾';
   const label = dark ? 'Switch to light theme' : 'Switch to dark theme';
   btn.setAttribute('aria-label', label);
   btn.title = label;
