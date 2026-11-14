@@ -41,7 +41,8 @@ public GitHub repositories as project cards.
   using Node.js 24. This reports results without gating the legacy Pages deployment.
 - `.github/ISSUE_TEMPLATE/`: public bug and feedback issue forms (blank issues stay
   enabled), reached from the footer's external "Report an issue" link and the README.
-  Keep the forms, footer link and README contributing text consistent.
+  Keep the forms, footer link, README contributing text and the privacy notice's
+  "Reporting an issue" section consistent.
 - `legal/privacy-policy.md`: privacy notice linked from the footer. It describes theme
   storage, the GitHub data cache, GitHub API requests and the favicon host, so update it
   when browser storage, network requests or third-party hosts change.
@@ -124,6 +125,13 @@ public GitHub repositories as project cards.
 - A failed API request leaves displayed cards or the GitHub browsing fallback intact.
   Requests are unauthenticated and subject to GitHub rate limits; background retries
   run only while the page is open and stop after their retry budget.
+- Only a 429, or a 403 with Retry-After, an exhausted rate-limit header or a "rate
+  limit" message, counts as rate limiting. Other 4xx responses, such as a 403, 404 or
+  410 on optional release/license details, are requested once and never retried in the
+  background.
+- The theme toggle's moon and sun icons are inline SVGs in `index.html`, swapped by CSS
+  on `[data-theme]`. `assets/script.js` updates only the label and title; setting the
+  button's `textContent` would remove the icons.
 - The privacy footer uses the published absolute URL so it works in the plain local
   preview as well as Pages; the local Python server does not render Markdown routes.
 - Profile/social requests are also unauthenticated and share the GitHub API rate
@@ -148,4 +156,4 @@ Read and follow these adopted project rules:
 - .claude/rules/writing.md
 - .claude/rules/design.md
 
-<!-- last-reviewed: a087eca8803da7f0e2931ec401330328d6c6f569 -->
+<!-- last-reviewed: 188106139a5d9fc29cbc1fdab754cd40039dcc2d -->
