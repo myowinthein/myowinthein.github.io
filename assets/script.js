@@ -267,7 +267,12 @@ function renderProfile(profile) {
   profileAvatar.hidden = !avatarUrl;
   updateFavicon(avatarUrl);
   const name = typeof profile.name === 'string' && profile.name.trim() ? profile.name.trim() : GITHUB_USER;
-  document.getElementById('profile-name').textContent = name;
+  const profileName = document.getElementById('profile-name');
+  profileName.textContent = name;
+  if (profileName.getAttribute('data-profile') === 'compact') {
+    document.title = `Page not found | ${name}`;
+    return;
+  }
   const detailFields = ['bio', 'company', 'location'];
   for (const field of detailFields) {
     const element = document.getElementById(`profile-${field}`);
@@ -323,7 +328,7 @@ async function loadSocialLinks() {
 const grid = document.getElementById('grid');
 const loadMore = document.getElementById('load-more');
 const projectStatus = document.getElementById('project-status');
-const fallbackProjects = grid.innerHTML;
+const fallbackProjects = grid?.innerHTML || '';
 const PAGE_SIZE = 6;
 const seenProjects = new Set();
 let nextPage = 1;
@@ -337,6 +342,7 @@ function projectPageUrl(page) {
 }
 
 function updateProjectControls() {
+  if (!loadMore) return;
   const canUseCache = Boolean(readGitHubCache(projectPageUrl(nextPage), isRepositoryPage));
   const unavailable = (projectsBlocked || githubRetryAt()) && !canUseCache;
   loadMore.setAttribute('aria-disabled', String(loading));
@@ -560,5 +566,5 @@ async function loadMoreProjects() {
   await Promise.allSettled(detailRequests);
 }
 
-loadMore.addEventListener('click', loadMoreProjects);
-Promise.allSettled([loadProfile(), loadSocialLinks(), loadMoreProjects()]);
+loadMore?.addEventListener('click', loadMoreProjects);
+Promise.allSettled(grid ? [loadProfile(), loadSocialLinks(), loadMoreProjects()] : [loadProfile()]);

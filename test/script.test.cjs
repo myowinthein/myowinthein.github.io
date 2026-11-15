@@ -74,7 +74,7 @@ function loadScript(
   fetchImpl = () => Promise.resolve({ ok: false, status: 404 }),
   {
     savedTheme = null, prefersDark = false, storage = new Map(), storageApi,
-    now = Date.now(),
+    now = Date.now(), compactProfile = false,
     profileFetch = async () => ({ ok: false, status: 404 }),
     socialFetch = async () => ({ ok: false, status: 404 }),
     releaseFetch = async () => ({ ok: false, status: 404 }),
@@ -106,10 +106,16 @@ function loadScript(
   elements['page-favicon'].setAttribute('href', 'https://github.com/myowinthein.png?size=64');
   elements['profile-links'].innerHTML = '<a class="external-link" href="https://github.com/myowinthein"><span class="link-label">GitHub</span></a>';
   elements.grid.innerHTML = '<p><a class="external-link" href="https://github.com/myowinthein?tab=repositories"><span class="link-label">Browse public repositories</span></a></p>';
+  if (compactProfile) {
+    elements['profile-name'].setAttribute('data-profile', 'compact');
+    for (const id of ['grid', 'load-more', 'project-status', 'profile-details', 'profile-bio',
+      'profile-company', 'profile-location', 'profile-links', 'page-description', 'page-og-title',
+      'page-og-description', 'page-twitter-title', 'page-twitter-description']) delete elements[id];
+  }
   const sandbox = {
     document: {
       get activeElement() { return focusState.activeElement; },
-      title: 'myowinthein | Public projects',
+      title: compactProfile ? 'Page not found | myowinthein' : 'myowinthein | Public projects',
       documentElement: {
         setAttribute(name, value) { attributes.set(name, value); },
         getAttribute(name) { return attributes.get(name) ?? null; },
@@ -235,6 +241,55 @@ async function seedCache(storage) {
   await sandbox.ready;
   return sandbox;
 }
+
+test('404 loads only the shared profile and keeps its error title without directory markup', async () => {
+  const requests = [];
+  const unexpected = async () => { requests.push('unexpected'); return response([]); };
+  const sandbox = loadScript(unexpected, {
+    compactProfile: true,
+    profileFetch: async url => {
+      requests.push(url);
+      return response({ name: 'Current Name', avatar_url: 'https://avatars.githubusercontent.com/u/1234' });
+    },
+    socialFetch: unexpected, releaseFetch: unexpected, licenseFetch: unexpected,
+  });
+  await sandbox.ready;
+  assert.deepEqual(requests, ['https://api.github.com/users/myowinthein']);
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Current Name');
+  assert.equal(sandbox.document.getElementById('profile-avatar').getAttribute('src'), 'https://avatars.githubusercontent.com/u/1234?s=144');
+  assert.equal(sandbox.document.getElementById('profile-avatar').hidden, false);
+  assert.equal(sandbox.document.title, 'Page not found | Current Name');
+});
+
+test('404 reuses the homepage profile cache without requesting other GitHub data', async () => {
+  const storage = new Map();
+  await seedCache(storage);
+  let requests = 0;
+  const unexpected = async () => { requests += 1; throw new Error('Unexpected API request'); };
+  const sandbox = loadScript(unexpected, {
+    compactProfile: true, storage, now: CACHE_TEST_TIME + 1,
+    profileFetch: unexpected, socialFetch: unexpected,
+  });
+  await sandbox.ready;
+  assert.equal(requests, 0);
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Cached Name');
+  assert.equal(sandbox.document.title, 'Page not found | Cached Name');
+});
+
+test('404 retains its fallback during a profile failure and can recover without project controls', async () => {
+  let attempts = 0;
+  const sandbox = loadScript(undefined, {
+    compactProfile: true,
+    profileFetch: async () => ++attempts === 1
+      ? { ok: false, status: 503 } : response({ name: 'Recovered Name' }),
+  });
+  await sandbox.ready;
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'myowinthein');
+  assert.equal(sandbox.document.title, 'Page not found | myowinthein');
+  await sandbox.runNextRetry();
+  assert.equal(sandbox.document.getElementById('profile-name').textContent, 'Recovered Name');
+  assert.equal(sandbox.document.title, 'Page not found | Recovered Name');
+});
 
 test('reuses fresh profile, social, and repository caches without API requests', async () => {
   const storage = new Map();

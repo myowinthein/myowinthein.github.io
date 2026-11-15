@@ -6,7 +6,7 @@
   <title>Page not found | myowinthein</title>
   <meta name="description" content="The page may have moved, or the address may be incorrect.">
   <meta name="robots" content="noindex">
-  <link rel="icon" type="image/png" href="https://github.com/myowinthein.png?size=64">
+  <link id="page-favicon" rel="icon" type="image/png" href="https://github.com/myowinthein.png?size=64">
   <script src="/assets/theme.js"></script>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
@@ -23,7 +23,10 @@
 </button>
 
 <header class="not-found-header">
-  <p class="not-found-site">myowinthein</p>
+  <div class="profile-avatar-slot">
+    <img class="profile-avatar" id="profile-avatar" width="72" height="72" alt="" referrerpolicy="no-referrer" hidden>
+  </div>
+  <p class="not-found-site" id="profile-name" data-profile="compact">myowinthein</p>
 </header>
 
 <main class="not-found-content">
@@ -33,12 +36,8 @@
   <a class="load-more return-home" href="/">Return to home</a>
 </main>
 
-<footer>
-  <a class="external-link" href="https://github.com/myowinthein/myowinthein.github.io/issues/new/choose"><span class="link-label">Report an issue</span></a>
-  <a href="https://myowinthein.github.io/legal/privacy-policy.html"><span class="link-label">Privacy notice</span></a>
-</footer>
-
 <script src="/assets/theme-controls.js"></script>
+<script src="/assets/script.js"></script>
 
 </body>
 </html>
