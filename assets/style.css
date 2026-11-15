@@ -145,6 +145,48 @@ footer a:focus-visible .link-label {
 
 main { width: 100%; max-width: 860px; }
 
+.not-found-page .not-found-header {
+  min-height: 0;
+  margin-bottom: 48px;
+}
+
+.not-found-header .not-found-site {
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.not-found-content {
+  padding-block: 48px;
+  text-align: center;
+}
+
+.not-found-code {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.not-found-content h1 {
+  font-size: clamp(28px, 5vw, 36px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.not-found-message {
+  margin: 16px 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.return-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

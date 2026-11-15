@@ -22,6 +22,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check assets/theme.js
+          node --check assets/theme-controls.js
           node --check assets/script.js
       - name: Run tests
         run: node --test test/script.test.cjs

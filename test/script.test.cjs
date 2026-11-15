@@ -182,6 +182,7 @@ function loadScript(
   };
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets/theme.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets/theme-controls.js'), 'utf8'), sandbox);
   sandbox.ready = vm.runInContext(code, sandbox);
   return sandbox;
 }
