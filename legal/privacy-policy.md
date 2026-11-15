@@ -1,9 +1,15 @@
+---
+layout: legal
+title: Privacy Notice
+permalink: /legal/privacy-policy.html
+---
+
 # Privacy Notice
 
 Last updated: 13 November 2026
 
 This notice explains how information is handled when you visit
-[myowinthein.github.io](https://myowinthein.github.io), a personal project listing
+[myowinthein.github.io](/), a personal project listing
 operated by Myo Win Thein.
 
 For privacy questions or requests, email

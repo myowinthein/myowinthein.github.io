@@ -5,7 +5,8 @@
 Personal landing page for Myo Win Thein, hosted on GitHub Pages. Lists the owner's
 public GitHub repositories as project cards.
 
-- Stack: plain HTML, CSS, vanilla JavaScript; no framework, build tool, or package manager.
+- Stack: plain HTML, CSS and vanilla JavaScript; GitHub Pages renders the Markdown
+  legal page with Jekyll. No JavaScript framework or package manager.
 - Deployment: pushing to `main` publishes through GitHub Pages.
 - Blast radius: a public personal site; deployed breakage is visible to visitors.
 
@@ -18,7 +19,8 @@ public GitHub repositories as project cards.
 
 ## Dev Commands
 
-- Preview: open `index.html` directly in a browser; no install or local server required.
+- Full-site preview with installed Jekyll: `jekyll serve --host 127.0.0.1 --disable-disk-cache --destination /tmp/myowinthein-pages-preview`.
+  Opening `index.html` directly previews only the landing page, not the rendered legal Markdown.
 - Tests: `node --test test/script.test.cjs` with a Node.js version supporting `node:test`.
 - JavaScript syntax: `node --check assets/script.js`.
 - Initial-theme syntax: `node --check assets/theme.js`.
@@ -28,7 +30,8 @@ public GitHub repositories as project cards.
 
 - `index.html`: generic account fallback, profile placeholders, accessible shell, and project fallback.
 - `assets/theme.js`: applies the saved or system theme in the head before the stylesheet and body render.
-- `assets/script.js`: theme toggle, public profile/social loading, and
+- `assets/theme-controls.js`: shared theme toggle and preference synchronization.
+- `assets/script.js`: public profile/social loading and
   on-demand GitHub repository fetch/filter/render.
 - `assets/style.css`: responsive cards and theme variables; dark overrides use
   `[data-theme="dark"]` on `<html>`.
@@ -43,7 +46,10 @@ public GitHub repositories as project cards.
   enabled), reached from the footer's external "Report an issue" link and the README.
   Keep the forms, footer link, README contributing text and the privacy notice's
   "Reporting an issue" section consistent.
-- `legal/privacy-policy.md`: privacy notice linked from the footer. It describes theme
+- `legal/privacy-policy.md`: privacy notice linked from the footer, rendered through
+  `_layouts/legal.html` with the site's shared styles and theme controls.
+  `_config.yml` excludes contributor files, tests and private workflow state from publication.
+  The notice describes theme
   storage, the GitHub data cache, GitHub API requests and the favicon host, so update it
   when browser storage, network requests or third-party hosts change.
 
@@ -130,10 +136,10 @@ public GitHub repositories as project cards.
   410 on optional release/license details, are requested once and never retried in the
   background.
 - The theme toggle's moon and sun icons are inline SVGs in `index.html`, swapped by CSS
-  on `[data-theme]`. `assets/script.js` updates only the label and title; setting the
+  on `[data-theme]`. `assets/theme-controls.js` updates only the label and title; setting the
   button's `textContent` would remove the icons.
-- The privacy footer uses the published absolute URL so it works in the plain local
-  preview as well as Pages; the local Python server does not render Markdown routes.
+- Keep the privacy footer link local to the current origin. Full-site previews need
+  Jekyll to render the legal Markdown; a plain Python server does not apply its layout.
 - Profile/social requests are also unauthenticated and share the GitHub API rate
   limit. Generic static metadata is intentional for crawlers that do not execute JS.
 - Cache expiry controls freshness, not deletion. Cached public data may stay visible

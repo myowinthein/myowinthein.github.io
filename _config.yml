@@ -1,0 +1,10 @@
+# GitHub Pages already renders the legal Markdown with Jekyll.
+# Keep contributor instructions, tests and private workflow state out of the site.
+exclude:
+  - AGENTS.md
+  - CLAUDE.md
+  - README.md
+  - test/
+  - .claude/
+  - .helm/
+  - .archive/
