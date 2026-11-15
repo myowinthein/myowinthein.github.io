@@ -201,24 +201,12 @@ main { width: 100%; max-width: 860px; }
 .return-home {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   min-height: 44px;
   max-width: 100%;
-  padding: 10px 18px;
-  background: var(--brand);
-  border: 1px solid var(--brand);
-  border-radius: 8px;
-  color: var(--bg);
   font-size: 14px;
-  font-weight: 600;
   line-height: 1.5;
   overflow-wrap: anywhere;
   text-underline-offset: 5px;
-}
-
-.return-home:hover {
-  box-shadow: 0 2px 12px var(--brand-glow);
-  text-decoration-thickness: 2px;
 }
 
 .legal-navigation,
