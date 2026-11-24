@@ -1575,7 +1575,7 @@ test('retains safe fallbacks when profile and social endpoints return invalid da
 
 test('lists owned public projects without Pages or a homepage, excluding forks and self', async () => {
   const sandbox = loadScript(paginatedFetch([
-    repo('plain-project'),
+    repo('plain-project', { owner: { login: 'MyOwInThEiN' } }),
     repo('archived-project', { archived: true }),
     repo('private-project', { private: true }),
     repo('fork-project', { fork: true }),
@@ -1584,6 +1584,7 @@ test('lists owned public projects without Pages or a homepage, excluding forks a
   ]));
   await sandbox.ready;
   const html = sandbox.document.getElementById('grid').innerHTML;
+  assert.deepEqual(cardNames(html), ['plain-project', 'archived-project']);
   assert.match(html, /plain-project/);
   assert.match(html, /archived-project/);
   assert.doesNotMatch(html, /private-project|fork-project|Myowinthein.github.io|other-owner/);
@@ -2194,7 +2195,7 @@ test('does not repeat cards when repositories move between API pages', async () 
   const sandbox = loadScript(async url => {
     const page = new URL(url).searchParams.get('page');
     if (page === '1') return response([repo('alpha'), repo('beta'), repo('gamma')], true);
-    if (page === '2') return response([repo('gamma'), repo('delta'), repo('epsilon')], true);
+    if (page === '2') return response([repo('gamma'), repo('GaMmA'), repo('delta'), repo('epsilon')], true);
     return response([repo('zeta')]);
   });
   await sandbox.ready;
