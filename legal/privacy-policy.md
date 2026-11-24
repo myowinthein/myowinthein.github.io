@@ -6,7 +6,7 @@ permalink: /legal/privacy-policy.html
 
 # Privacy Notice
 
-Last updated: 13 November 2026
+Last updated: 24 November 2026
 
 This notice explains how information is handled when you visit
 [myowinthein.github.io](/), a personal project listing
@@ -77,10 +77,10 @@ The site stores copies of my public GitHub profile, social links, repository
 pages, and successful latest-release and license responses in your browser's local storage.
 This cache contains public GitHub data, not information you submit through this site.
 
-For five minutes after a successful request, the site can reuse that response
+For one hour after a successful request, the site can reuse that response
 without another API request. Once it is older, cached content can remain visible
 while the site requests an update. If the request fails, the cached content may
-remain visible, and Load more can use saved repository pages even after five minutes.
+remain visible, and Load more can use saved repository pages even after one hour.
 While the page remains open, the site can retry temporary failures in the background
 up to three times, with increasing delays. If GitHub limits requests, retries wait
 until its retry time. Successful background requests refresh the stored copies;
@@ -92,7 +92,7 @@ time, not the error response. Once that time passes, requests can be tried again
 The stored retry time is ignored after it expires and can be removed by clearing
 this site's local storage or site data.
 
-The five-minute period does not delete the stored copy. Cached copies remain
+The one-hour period does not delete the stored copy. Cached copies remain
 until replaced or removed when you clear this site's local storage or site data
 in your browser. If browser storage is unavailable, the site attempts to load
 data directly from GitHub.
