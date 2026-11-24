@@ -257,6 +257,7 @@ for (const scenario of [
 }
 
 const CACHE_TEST_TIME = 1_000_000;
+const CACHE_TEST_TTL = 60 * 60 * 1000;
 
 async function seedCache(storage) {
   const sandbox = loadScript(paginatedFetch([repo('cached-project')]), {
@@ -323,7 +324,7 @@ test('reuses fresh profile, social, and repository caches without API requests',
   let requests = 0;
   const unexpected = async () => { requests += 1; throw new Error('Unexpected API request'); };
   const sandbox = loadScript(unexpected, {
-    storage, now: CACHE_TEST_TIME + 5 * 60 * 1000 - 1,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL - 1,
     profileFetch: unexpected, socialFetch: unexpected,
   });
   await sandbox.ready;
@@ -333,7 +334,7 @@ test('reuses fresh profile, social, and repository caches without API requests',
   assert.match(sandbox.document.getElementById('grid').innerHTML, /cached-project/);
 });
 
-test('caches all displayed fields together and refreshes them through the existing five-minute cache', async () => {
+test('caches all displayed fields together and refreshes them through the one-hour cache', async () => {
   const storage = new Map();
   const requests = [];
   const visit = (now, updated = false) => {
@@ -366,7 +367,7 @@ test('caches all displayed fields together and refreshes them through the existi
   let replayRequests = 0;
   const unexpected = async () => { replayRequests += 1; throw new Error('Fresh cached fields must not request the API'); };
   const cached = loadScript(unexpected, {
-    storage, now: CACHE_TEST_TIME + 299_999,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL - 1,
     profileFetch: unexpected, socialFetch: unexpected, releaseFetch: unexpected, licenseFetch: unexpected,
   });
   await cached.ready;
@@ -381,7 +382,7 @@ test('caches all displayed fields together and refreshes them through the existi
   assert.match(get('grid').innerHTML, /class="card-status">Archived/);
   assert.match(get(cached.releaseElementId('sample')).innerHTML, /v1.2.3/);
   assert.match(get(cached.licenseElementId('sample')).innerHTML, />MIT<\/span>/);
-  const refreshed = visit(CACHE_TEST_TIME + 300_000, true);
+  const refreshed = visit(CACHE_TEST_TIME + CACHE_TEST_TTL, true);
   await refreshed.ready;
   assert.equal(requests.length, 10);
   const fresh = id => refreshed.document.getElementById(id);
@@ -392,15 +393,15 @@ test('caches all displayed fields together and refreshes them through the existi
   assert.doesNotMatch(fresh('grid').innerHTML, /card-status|Cached description/);
   assert.match(fresh(refreshed.releaseElementId('sample')).innerHTML, /v2.0.0/);
   assert.match(fresh(refreshed.licenseElementId('sample')).innerHTML, /Apache-2.0/);
-  for (const raw of storage.values()) assert.equal(JSON.parse(raw).savedAt, CACHE_TEST_TIME + 300_000);
+  for (const raw of storage.values()) assert.equal(JSON.parse(raw).savedAt, CACHE_TEST_TIME + CACHE_TEST_TTL);
 });
 
-test('shows expired data immediately, then replaces it and renews the cache after five minutes', async () => {
+test('shows expired data immediately, then replaces it and renews the cache after one hour', async () => {
   const storage = new Map();
   await seedCache(storage);
   let finishProfile, finishSocial, finishProjects;
   const sandbox = loadScript(() => new Promise(resolve => { finishProjects = resolve; }), {
-    storage, now: CACHE_TEST_TIME + 5 * 60 * 1000,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL,
     profileFetch: () => new Promise(resolve => { finishProfile = resolve; }),
     socialFetch: () => new Promise(resolve => { finishSocial = resolve; }),
   });
@@ -421,7 +422,7 @@ test('shows expired data immediately, then replaces it and renews the cache afte
   let requests = 0;
   const unexpected = async () => { requests += 1; throw new Error('Unexpected API request'); };
   const nextVisit = loadScript(unexpected, {
-    storage, now: CACHE_TEST_TIME + 5 * 60 * 1000 + 1,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL + 1,
     profileFetch: unexpected, socialFetch: unexpected,
   });
   await nextVisit.ready;
@@ -437,7 +438,7 @@ test('retains expired data quietly and refreshes its cache in the background', a
   const sandbox = loadScript(async url => {
     pages.push(new URL(url).searchParams.get('page'));
     return recover ? response([repo('recovered-project')]) : { ok: false, status: 503 };
-  }, { storage, now: CACHE_TEST_TIME + 300_000 });
+  }, { storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL });
   await sandbox.ready;
   const get = id => sandbox.document.getElementById(id);
   const initialNodes = [...get('grid').children];
@@ -452,7 +453,7 @@ test('retains expired data quietly and refreshes its cache in the background', a
   assert.deepEqual(get('grid').children, initialNodes);
   const entry = JSON.parse(storage.get(CACHE_PREFIX + sandbox.projectPageUrl(1)));
   assert.equal(entry.data[0].name, 'recovered-project');
-  assert.equal(entry.savedAt, CACHE_TEST_TIME + 360_000);
+  assert.equal(entry.savedAt, CACHE_TEST_TIME + CACHE_TEST_TTL + 60_000);
   assert.equal(cardCount(get('grid').innerHTML), 1);
 });
 
@@ -491,7 +492,7 @@ test('backs off silently across reloads without renewing stale data, then retrie
   const storage = new Map();
   await seedCache(storage);
   const originalEntries = new Map(storage);
-  const now = CACHE_TEST_TIME + 300_000;
+  const now = CACHE_TEST_TIME + CACHE_TEST_TTL;
   const reset = now + 120_000;
   let requests = 0;
   let recover = false;
@@ -546,9 +547,9 @@ for (const status of [403, 503]) {
     let detailRequests = 0;
     const unexpected = async () => { detailRequests += 1; throw new Error('Unconfirmed detail request'); };
     const sandbox = loadScript(async () => apiResponse(status, {}, status === 403 ? {
-      'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String((CACHE_TEST_TIME + 600_000) / 1000),
+      'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String((CACHE_TEST_TIME + CACHE_TEST_TTL + 300_000) / 1000),
     } : {}), {
-      storage, now: CACHE_TEST_TIME + 300_000, releaseFetch: unexpected, licenseFetch: unexpected,
+      storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL, releaseFetch: unexpected, licenseFetch: unexpected,
     });
     await sandbox.ready;
     const get = id => sandbox.document.getElementById(id);
@@ -593,7 +594,7 @@ test('does not mistake an ordinary forbidden response for a rate limit', async (
 test('uses fresh cached content even while a persisted rate limit blocks the API', async () => {
   const storage = new Map();
   await seedCache(storage);
-  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + 600_000));
+  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + CACHE_TEST_TTL + 300_000));
   let requests = 0;
   const unexpected = async () => { requests += 1; throw new Error('Cached data requested the API'); };
   const sandbox = loadScript(unexpected, {
@@ -613,12 +614,12 @@ test('Load more browses every expired cached batch during a rate limit without A
   await seed.ready;
   await seed.document.getElementById('load-more').click();
   await seed.document.getElementById('load-more').click();
-  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + 600_000));
+  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + CACHE_TEST_TTL + 300_000));
   const before = new Map(storage);
   let requests = 0;
   const unexpected = async () => { requests += 1; throw new Error('Request before reset'); };
   const sandbox = loadScript(unexpected, {
-    storage, now: CACHE_TEST_TIME + 300_000, profileFetch: unexpected, socialFetch: unexpected,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL, profileFetch: unexpected, socialFetch: unexpected,
     releaseFetch: unexpected, licenseFetch: unexpected,
   });
   await sandbox.ready;
@@ -646,9 +647,9 @@ test('hides an uncached next batch during a limit and restores Load more after b
   const repositories = Array.from({ length: 7 }, (_, i) => repo(`saved-${i}`));
   const seed = loadScript(paginatedFetch(repositories), { storage, now: CACHE_TEST_TIME });
   await seed.ready;
-  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + 600_000));
+  storage.set(RATE_LIMIT_KEY, String(CACHE_TEST_TIME + CACHE_TEST_TTL + 300_000));
   const requests = [];
-  const sandbox = loadScript(paginatedFetch(repositories, requests), { storage, now: CACHE_TEST_TIME + 300_000 });
+  const sandbox = loadScript(paginatedFetch(repositories, requests), { storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL });
   await sandbox.ready;
   const get = id => sandbox.document.getElementById(id);
   const initialNodes = [...get('grid').children];
@@ -798,7 +799,7 @@ test('background profile and social recovery replaces saved values without dupli
   await seedCache(storage);
   let recover = false;
   const sandbox = loadScript(paginatedFetch([repo('cached-project')]), {
-    storage, now: CACHE_TEST_TIME + 300_000,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL,
     profileFetch: async () => recover ? response({ name: 'Updated name', blog: 'https://updated.example/' }) : apiResponse(503, {}),
     socialFetch: async () => recover ? response([{ provider: 'linkedin', url: 'https://linkedin.com/in/updated/' }]) : apiResponse(503, {}),
   });
@@ -970,7 +971,7 @@ test('continues browsing stale cached pages while a background refresh preserves
     pages.push(page);
     if (page === '1') return response(repositories.slice(0, 6), true);
     return recover ? response([repo('updated-6'), repo('updated-7')]) : { ok: false, status: 503 };
-  }, { storage, now: CACHE_TEST_TIME + 300_000 });
+  }, { storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL });
   await nextVisit.ready;
   const get = id => nextVisit.document.getElementById(id);
   const initialCards = [...get('grid').children];
@@ -985,7 +986,7 @@ test('continues browsing stale cached pages while a background refresh preserves
   assert.deepEqual(get('grid').children.slice(0, 6), initialCards);
   const entry = JSON.parse(storage.get(CACHE_PREFIX + nextVisit.projectPageUrl(2)));
   assert.equal(entry.data[0].name, 'updated-6');
-  assert.equal(entry.savedAt, CACHE_TEST_TIME + 360_000);
+  assert.equal(entry.savedAt, CACHE_TEST_TIME + CACHE_TEST_TTL + 60_000);
 });
 
 test('persists theme toggles and restores the choice on reload', async () => {
@@ -1728,7 +1729,7 @@ test('caches licenses, preserves a focused link during refresh, and keeps stale 
   assert.equal(fresh.document.getElementById(fresh.licenseElementId('sample')).hidden, false);
   let finishLicense;
   const stale = loadScript(paginatedFetch([project]), {
-    storage, now: CACHE_TEST_TIME + 300_000,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL,
     licenseFetch: () => new Promise(resolve => { finishLicense = resolve; }),
   });
   for (let i = 0; i < 12; i += 1) await Promise.resolve();
@@ -1744,7 +1745,7 @@ test('caches licenses, preserves a focused link during refresh, and keeps stale 
   const key = [...storage.keys()].find(key => key.endsWith('/license'));
   const lastSuccess = storage.get(key);
   const failed = loadScript(paginatedFetch([project]), {
-    storage, now: CACHE_TEST_TIME + 600_000, licenseFetch: async () => ({ ok: false, status: 503 }),
+    storage, now: CACHE_TEST_TIME + 2 * CACHE_TEST_TTL, licenseFetch: async () => ({ ok: false, status: 503 }),
   });
   await failed.ready;
   assert.match(failed.document.getElementById(failed.licenseElementId('sample')).innerHTML, /Apache-2.0/);
@@ -1873,7 +1874,7 @@ test('caches release responses, refreshes expired versions, and retains them aft
   assert.match(fresh.document.getElementById(fresh.releaseElementId('sample')).innerHTML, /v1.2.3/);
   let finishRelease;
   const stale = loadScript(paginatedFetch([repo('sample')]), {
-    storage, now: CACHE_TEST_TIME + 300_000,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL,
     releaseFetch: () => new Promise(resolve => { finishRelease = resolve; }),
   });
   for (let i = 0; i < 12; i += 1) await Promise.resolve();
@@ -1887,7 +1888,7 @@ test('caches release responses, refreshes expired versions, and retains them aft
   const key = [...storage.keys()].find(key => key.includes('/releases/latest'));
   const lastSuccess = storage.get(key);
   const failure = loadScript(paginatedFetch([repo('sample')]), {
-    storage, now: CACHE_TEST_TIME + 600_000, releaseFetch: async () => ({ ok: false, status: 503 }),
+    storage, now: CACHE_TEST_TIME + 2 * CACHE_TEST_TTL, releaseFetch: async () => ({ ok: false, status: 503 }),
   });
   await failure.ready;
   assert.match(failure.document.getElementById(failure.releaseElementId('sample')).innerHTML, /v2.0.0/);
@@ -1918,7 +1919,7 @@ test('does not fetch releases for unconfirmed cached previews', async () => {
   await seedCache(storage);
   let requests = 0;
   const sandbox = loadScript(async () => ({ ok: false, status: 503 }), {
-    storage, now: CACHE_TEST_TIME + 300_000,
+    storage, now: CACHE_TEST_TIME + CACHE_TEST_TTL,
     releaseFetch: async () => { requests += 1; return response(release()); },
   });
   await sandbox.ready;

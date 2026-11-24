@@ -73,10 +73,10 @@ public GitHub repositories as project cards.
 - Profile, social-account, and repository requests run independently. Keep generic
   static fallbacks; hide empty optional fields and deduplicate validated links.
   Refresh data on page load without requiring a site commit or deployment, subject
-  to the five-minute response cache.
+  to the one-hour response cache.
 - Latest-release and license requests enrich only confirmed displayed projects, independently
   of repository loading. Missing or failed releases leave no empty version row;
-  successful responses use the same five-minute cache. Update only each release
+  successful responses use the same one-hour cache. Update only each release
   or license slot so incoming data preserves existing card nodes and keyboard focus.
 - Add a muted license link after Source only when a repository advertises a license
   and its license endpoint returns a valid file URL. Use its SPDX identifier, or
@@ -92,7 +92,7 @@ public GitHub repositories as project cards.
   Keep cache/rate-limit failures out of the visible UI: no warning or Try again
   button. Retry requested resources quietly after reset; temporary failures get
   at most three background retries with increasing delays, not ongoing polling.
-- On refresh failure, use validated cached pages even beyond five minutes and
+- On refresh failure, use validated cached pages even beyond one hour and
   retain their release/license details without new detail requests. Cached browsing
   can advance using saved Link metadata without renewing cache timestamps. Load more
   stays available for cached batches during rate limits; hide it when the next batch
