@@ -2051,6 +2051,39 @@ test('skips fully excluded pages and retries a failed next page without starting
   assert.equal(button.hidden, true);
 });
 
+test('delays the visual loading indicator while keeping busy semantics immediate and clearing stale timers', async () => {
+  let finishPage;
+  let requests = 0;
+  const sandbox = loadScript(async () => {
+    requests += 1;
+    if (requests === 2) return new Promise(resolve => { finishPage = resolve; });
+    return response([repo(`project-${requests}`)], true);
+  });
+  await sandbox.ready;
+  const button = sandbox.document.getElementById('load-more');
+  assert.equal(button.getAttribute('data-loading-visible'), 'false');
+  assert.equal(sandbox.timers.size, 0, 'A quick request must cancel the indicator timer');
+
+  const pending = button.click();
+  assert.equal(button.getAttribute('aria-busy'), 'true');
+  assert.equal(button.getAttribute('aria-disabled'), 'true');
+  assert.equal(button.getAttribute('data-loading-visible'), 'false');
+  assert.equal(button.textContent, 'Load more');
+  assert.equal([...sandbox.timers.values()][0].delay, 150);
+  await sandbox.runNextRetry();
+  assert.equal(button.getAttribute('data-loading-visible'), 'true');
+  finishPage(response([repo('slow-project')], true));
+  await pending;
+  assert.equal(button.getAttribute('data-loading-visible'), 'false');
+  assert.equal(button.getAttribute('aria-busy'), 'false');
+  assert.equal(sandbox.timers.size, 0);
+
+  await button.click();
+  assert.equal(requests, 3);
+  assert.equal(button.getAttribute('data-loading-visible'), 'false');
+  assert.equal(sandbox.timers.size, 0, 'A later quick request must not show an old indicator');
+});
+
 test('ignores repeated load requests while an API page is in flight', async () => {
   let finishPage;
   let requests = 0;

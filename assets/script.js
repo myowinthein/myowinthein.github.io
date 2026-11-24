@@ -542,6 +542,9 @@ async function loadMoreProjects(recoveredResponse) {
   loadMore.setAttribute('aria-busy', 'true');
   loadMore.setAttribute('aria-label', 'Loading more projects');
   grid.setAttribute('aria-busy', 'true');
+  const loadingIndicatorTimer = setTimeout(() => {
+    loadMore.setAttribute('data-loading-visible', 'true');
+  }, 150);
   if (displayedProjects.length === 0) grid.innerHTML = '<p class="loading">Loading projects…</p>';
   let previewProjects = [];
   let detailRequests = [];
@@ -575,6 +578,8 @@ async function loadMoreProjects(recoveredResponse) {
     projectStatus.textContent = '';
     projectsBlocked = true;
   } finally {
+    clearTimeout(loadingIndicatorTimer);
+    loadMore.setAttribute('data-loading-visible', 'false');
     loading = false;
     const hadButtonFocus = document.activeElement === loadMore;
     loadMore.textContent = 'Load more';

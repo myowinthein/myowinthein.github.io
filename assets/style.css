@@ -430,9 +430,9 @@ main { width: 100%; max-width: 860px; }
   outline-offset: 0;
 }
 
-.load-more[aria-busy="true"] { cursor: progress; color: transparent; }
+.load-more[aria-busy="true"][data-loading-visible="true"] { cursor: progress; color: transparent; }
 
-.load-more[aria-busy="true"]::after {
+.load-more[aria-busy="true"][data-loading-visible="true"]::after {
   content: "";
   position: absolute;
   inset: 0;
