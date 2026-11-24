@@ -546,13 +546,12 @@ async function loadMoreProjects(recoveredResponse) {
     loadMore.setAttribute('data-loading-visible', 'true');
   }, 150);
   if (displayedProjects.length === 0) grid.innerHTML = '<p class="loading">Loading projects…</p>';
-  let previewProjects = [];
   let detailRequests = [];
   let firstNewCard;
 
   try {
     const { projects, stale } = await fetchNextProjects(cached => {
-      previewProjects = newProjects(cached.data, new Set(seenProjects));
+      const previewProjects = newProjects(cached.data, new Set(seenProjects));
       if (previewProjects.length) {
         showProjectBatch(previewProjects);
         renderCachedProjectDetails(previewProjects);
