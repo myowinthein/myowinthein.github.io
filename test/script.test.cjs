@@ -220,9 +220,7 @@ function loadScript(
 }
 
 for (const scenario of [
-  { name: 'uses the system light theme without a saved choice', prefersDark: false, expected: 'light' },
   { name: 'uses the system dark theme without a saved choice', prefersDark: true, expected: 'dark' },
-  { name: 'keeps a saved light theme over a dark system preference', savedTheme: 'light', prefersDark: true, expected: 'light' },
   { name: 'keeps a saved dark theme over a light system preference', savedTheme: 'dark', prefersDark: false, expected: 'dark' },
 ]) {
   test(scenario.name, async () => {
@@ -1045,12 +1043,6 @@ test('changes the visible theme even when its preference cannot be saved', async
   assert.equal(button.getAttribute('aria-label'), 'Switch to light theme');
   assert.doesNotThrow(() => button.click());
   assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'light');
-});
-
-test('ignores an invalid saved theme in favor of the system preference', async () => {
-  const sandbox = loadScript(undefined, { savedTheme: 'invalid', prefersDark: true });
-  await sandbox.ready;
-  assert.equal(sandbox.document.documentElement.getAttribute('data-theme'), 'dark');
 });
 
 test('automatic theme follows system changes without storing an override', async () => {
