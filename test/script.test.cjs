@@ -1158,12 +1158,63 @@ test('index.html provides every element the script reads and keeps scripts and s
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
   for (const id of ELEMENT_IDS) assert.match(html, new RegExp(`\\sid="${id}"`), `missing id ${id}`);
   assert.match(html, /<script src="assets\/script\.js"><\/script>/);
+  assert.match(html, /<script src="assets\/theme-controls\.js"><\/script>/);
   assert.match(html, /<script src="assets\/theme\.js"><\/script>/);
   assert.ok(html.indexOf('src="assets/theme.js"') < html.indexOf('href="assets/style.css"'));
   assert.ok(html.indexOf('src="assets/theme.js"') < html.indexOf('<body>'));
   assert.match(html, /<link rel="stylesheet" href="assets\/style\.css">/);
+  assert.ok(html.indexOf('src="assets/theme-controls.js"') > html.indexOf('id="theme-toggle"'));
+  assert.ok(html.indexOf('src="assets/theme-controls.js"') < html.indexOf('src="assets/script.js"'));
   assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)|<style/i);
 });
+
+for (const page of ['404.html', '_layouts/legal.html']) {
+  test(`${page} wires shared scripts to its real page shell`, () => {
+    const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
+    assert.match(html, /<script src="[^"]*assets\/theme\.js[^"]*"><\/script>/);
+    assert.match(html, /<script src="[^"]*assets\/theme-controls\.js[^"]*"><\/script>/);
+    assert.match(html, /<link rel="stylesheet" href="[^"]*assets\/style\.css[^"]*">/);
+    assert.ok(html.indexOf('assets/theme.js') < html.indexOf('assets/style.css'));
+    assert.ok(html.indexOf('assets/theme.js') < html.indexOf('<body'));
+    assert.ok(html.indexOf('assets/theme-controls.js') > html.indexOf('id="theme-toggle"'));
+    assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)|<style/i);
+
+    const toggle = html.match(/<button\b[^>]*\bid="theme-toggle"[^>]*>[\s\S]*?<\/button>/)?.[0];
+    assert.ok(toggle, 'The shared theme controls need their real button');
+    assert.match(toggle, /\btype="button"/);
+    assert.match(toggle, /\baria-label="Switch to dark theme"/);
+    for (const icon of ['moon', 'sun']) {
+      const svg = toggle.match(new RegExp(`<svg\\b[^>]*class="theme-icon-${icon}"[^>]*>`))?.[0];
+      assert.ok(svg, `Missing ${icon} icon`);
+      assert.match(svg, /\baria-hidden="true"/);
+      assert.match(svg, /\bfocusable="false"/);
+    }
+
+    if (page === '404.html') {
+      for (const id of ['page-favicon', 'profile-avatar', 'profile-name']) {
+        assert.match(html, new RegExp(`\\bid="${id}"`), `Missing compact profile element ${id}`);
+      }
+      const profileName = html.match(/<[^>]+\bid="profile-name"[^>]*>/)?.[0];
+      assert.match(profileName, /\bdata-profile="compact"/);
+      assert.match(html, /<script src="\/assets\/script\.js"><\/script>/);
+      assert.ok(html.indexOf('assets/theme-controls.js') < html.indexOf('assets/script.js'));
+      assert.doesNotMatch(html, /\bid="(?:grid|load-more|project-status)"/);
+      assert.match(html, /<a\b[^>]*href="\/"[^>]*>← Back to projects<\/a>/);
+    } else {
+      // This checks the authored Jekyll template, not its rendered output.
+      assert.doesNotMatch(html, /assets\/script\.js/);
+    }
+  });
+}
+
+for (const page of ['index.html', '404.html']) {
+  test(`${page} suppresses referrers on the profile avatar`, () => {
+    const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
+    const avatar = html.match(/<img\b[^>]*\bid="profile-avatar"[^>]*>/)?.[0];
+    assert.ok(avatar, 'Missing profile avatar');
+    assert.match(avatar, /\breferrerpolicy="no-referrer"/);
+  });
+}
 
 test('index.html theme toggle holds hidden moon and sun icons and keeps its accessible name', () => {
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
