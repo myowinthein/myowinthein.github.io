@@ -52,7 +52,26 @@ function element(tagName, focusState) {
       const attrs = [...attributes].map(([name, value]) => ` ${name}="${escape(value)}"`).join('');
       return `<${tagName}${attrs}>${this.innerHTML}</${tagName}>`;
     },
-    append(child) { children.push(child); },
+    parentElement: null,
+    remove() {
+      if (!this.parentElement) return;
+      if (focusState?.activeElement === this) focusState.activeElement = null;
+      const siblings = this.parentElement.children;
+      siblings.splice(siblings.indexOf(this), 1);
+      this.parentElement = null;
+    },
+    append(child) {
+      child.remove?.();
+      children.push(child);
+      child.parentElement = this;
+    },
+    insertBefore(child, reference) {
+      child.remove();
+      const index = reference === null ? children.length : children.indexOf(reference);
+      assert.ok(index >= 0, 'Reference must belong to the parent');
+      children.splice(index, 0, child);
+      child.parentElement = this;
+    },
     insertAdjacentHTML(position, markup) {
       assert.equal(position, 'beforeend');
       html += markup;
@@ -104,7 +123,14 @@ function loadScript(
   elements['profile-details'].hidden = true;
   elements['profile-avatar'].hidden = true;
   elements['page-favicon'].setAttribute('href', 'https://github.com/myowinthein.png?size=64');
-  elements['profile-links'].innerHTML = '<a class="external-link" href="https://github.com/myowinthein"><span class="link-label">GitHub</span></a>';
+  const githubLink = element('a', focusState);
+  githubLink.setAttribute('class', 'external-link');
+  githubLink.setAttribute('href', 'https://github.com/myowinthein');
+  const githubLabel = element('span', focusState);
+  githubLabel.setAttribute('class', 'link-label');
+  githubLabel.textContent = 'GitHub';
+  githubLink.append(githubLabel);
+  elements['profile-links'].append(githubLink);
   elements.grid.innerHTML = '<p><a class="external-link" href="https://github.com/myowinthein?tab=repositories"><span class="link-label">Browse public repositories</span></a></p>';
   if (compactProfile) {
     elements['profile-name'].setAttribute('data-profile', 'compact');
@@ -1191,6 +1217,34 @@ test('loads the introduction, metadata, website, and social links from public Gi
   assert.match(links, /href="https:\/\/example.medium.com\/"><span class="link-label">Medium/);
   assert.ok(urls.includes('https://api.github.com/users/myowinthein'));
   assert.ok(urls.includes('https://api.github.com/users/myowinthein/social_accounts?per_page=100&page=1'));
+});
+
+test('preserves focused profile links as delayed social data arrives and profile links change order', async () => {
+  let finishSocial;
+  const sandbox = loadScript(undefined, {
+    socialFetch: () => new Promise(resolve => { finishSocial = resolve; }),
+  });
+  const container = sandbox.document.getElementById('profile-links');
+  const github = container.firstElementChild;
+  github.focus();
+  finishSocial(response([{ provider: 'generic', url: 'https://social.example/' }]));
+  await sandbox.ready;
+  assert.equal(container.firstElementChild, github);
+  assert.equal(sandbox.document.activeElement, github);
+
+  const social = container.children[1];
+  social.focus();
+  sandbox.renderProfile({ blog: 'https://social.example/' });
+  assert.equal(container.firstElementChild, social);
+  assert.equal(social.firstElementChild.textContent, 'Website');
+  assert.equal(container.children[1], github);
+  assert.equal(container.children.length, 2);
+  assert.equal(sandbox.document.activeElement, social);
+
+  sandbox.renderProfile({});
+  assert.equal(container.children[1], social);
+  assert.equal(social.firstElementChild.textContent, 'social.example');
+  assert.equal(sandbox.document.activeElement, social);
 });
 
 test('treats profile text as plain text and validates and escapes social URLs and labels', async () => {

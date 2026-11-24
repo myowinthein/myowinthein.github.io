@@ -248,11 +248,34 @@ function renderProfileLinks() {
     links.push({ label, url });
   }
   const seen = new Set();
-  document.getElementById('profile-links').innerHTML = links.filter(link => {
+  const uniqueLinks = links.filter(link => {
     if (seen.has(link.url)) return false;
     seen.add(link.url);
     return true;
-  }).map(link => `<a class="external-link" href="${escapeHtml(link.url)}"><span class="link-label">${escapeHtml(link.label)}</span></a>`).join('');
+  });
+  const container = document.getElementById('profile-links');
+  const existing = new Map([...container.children].map(link => [link.getAttribute('href'), link]));
+  const focused = document.activeElement;
+  for (const [url, link] of existing) {
+    if (!seen.has(url)) link.remove();
+  }
+  uniqueLinks.forEach(({ label, url }, index) => {
+    let link = existing.get(url);
+    if (!link) {
+      link = document.createElement('a');
+      link.setAttribute('class', 'external-link');
+      link.setAttribute('href', url);
+      const span = document.createElement('span');
+      span.setAttribute('class', 'link-label');
+      link.append(span);
+    }
+    if (link.firstElementChild.textContent !== label) link.firstElementChild.textContent = label;
+    if (container.children[index] !== link) container.insertBefore(link, container.children[index] || null);
+  });
+  // Reordering a retained link can blur it; restore focus without scrolling.
+  if (focused?.parentElement === container && document.activeElement !== focused) {
+    focused.focus({ preventScroll: true });
+  }
 }
 
 function renderProfile(profile) {

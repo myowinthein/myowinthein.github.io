@@ -81,7 +81,7 @@ header p {
 
 header .role { color: var(--text); }
 
-a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+a { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; text-decoration-skip-ink: none; }
 
 .link-label {
   display: inline-block;
