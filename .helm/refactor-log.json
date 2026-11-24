@@ -550,8 +550,36 @@
         ],
         "invariant": "Keep the copied seenProjects set, filtering, API order, cached rendering calls, request/retry timing, final card state and keyboard focus unchanged; only narrow previewProjects to a callback-local constant."
       },
-      "state": "open",
-      "depends_on": []
+      "state": "resolved",
+      "depends_on": [],
+      "closure": {
+        "origin": "native",
+        "kind": "fixed",
+        "commit": "b17221b5eb63dfeb7d1572f4f7cb9b71ad298fb1",
+        "date": "2026-11-24",
+        "method": "runtime",
+        "evidence": [
+          "Removed the unused outer previewProjects declaration and made its existing callback assignment a local constant; all filtering and rendering expressions remain unchanged.",
+          "All 148 existing tests passed unchanged, including stale-cache preview, cached browsing, retry recovery, retained-card and focus scenarios."
+        ],
+        "checks": [
+          {
+            "command": "node --check assets/script.js && node --check assets/theme.js && node --check assets/theme-controls.js",
+            "scope": "All configured browser JavaScript syntax checks in the project root",
+            "outcome": "Passed with exit status 0."
+          },
+          {
+            "command": "node --test test/script.test.cjs",
+            "scope": "All dependency-free Node VM component and static page-shell tests; mocked API, DOM and storage; no real browser or network",
+            "outcome": "148 passed; 0 failed, skipped, cancelled or todo."
+          },
+          {
+            "command": "git diff --check",
+            "scope": "The reviewed application-script change",
+            "outcome": "Passed with exit status 0."
+          }
+        ]
+      }
     }
   ]
 }
