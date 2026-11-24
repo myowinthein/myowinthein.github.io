@@ -161,5 +161,6 @@ Read and follow these adopted project rules:
 - .claude/rules/safety.md
 - .claude/rules/writing.md
 - .claude/rules/design.md
+- .claude/rules/interaction.md
 
 <!-- last-reviewed: 188106139a5d9fc29cbc1fdab754cd40039dcc2d -->
