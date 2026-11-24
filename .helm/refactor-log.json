@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "assessed_commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
-  "full_scan_commit": "b17934e7a960c4ae2c84b676c46f83d132c3d0c9",
+  "assessed_commit": "9a33b1c3d847a50baf43e2a94f219bd132466283",
+  "full_scan_commit": "9a33b1c3d847a50baf43e2a94f219bd132466283",
   "findings": [
     {
       "id": "r-13c9a457-50c1-4038-8b19-9fe24c3ca2c3",
@@ -525,6 +525,33 @@
           "The test suite does not load CSS (134 tests passed unchanged), so rendering was not checked in a browser; the open manual test case covers a real-browser look and was not performed"
         ]
       }
+    },
+    {
+      "id": "r-6353889e-bba7-42d9-b05f-62a7bc72762d",
+      "category": "Code Quality",
+      "summary": "Cached preview projects are mutable state for the entire loading routine even though only the stale-cache callback reads them.",
+      "paths": ["assets/script.js", "test/script.test.cjs"],
+      "found": {
+        "origin": "native",
+        "commit": "9a33b1c3d847a50baf43e2a94f219bd132466283",
+        "date": "2026-11-24"
+      },
+      "assessment": {
+        "origin": "native",
+        "commit": "9a33b1c3d847a50baf43e2a94f219bd132466283",
+        "date": "2026-11-24",
+        "priority": "low",
+        "risk": "safe",
+        "reason": "The outer mutable declaration suggests cross-phase state in the intricate loader, but the array is assigned and consumed only within one callback. A callback-local constant makes that lifetime explicit without adding an abstraction.",
+        "evidence": [
+          "assets/script.js::loadMoreProjects declares previewProjects before try and only accesses it inside the fetchNextProjects stale callback.",
+          "The callback already receives each cached page and uses newProjects with a copied seenProjects set before rendering cards and cached details.",
+          "Existing stale-cache, pagination, retained-card and focus tests exercise the surrounding loader contracts."
+        ],
+        "invariant": "Keep the copied seenProjects set, filtering, API order, cached rendering calls, request/retry timing, final card state and keyboard focus unchanged; only narrow previewProjects to a callback-local constant."
+      },
+      "state": "open",
+      "depends_on": []
     }
   ]
 }
