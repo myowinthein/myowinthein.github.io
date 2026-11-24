@@ -452,7 +452,7 @@ footer {
 
 @media (prefers-reduced-motion: reduce) {
   body, .theme-toggle { transition: none; }
-  .load-more[aria-busy="true"]::after { animation: none; }
+  .load-more[aria-busy="true"][data-loading-visible="true"]::after { animation: none; }
 }
 
 @media (max-width: 600px) {
