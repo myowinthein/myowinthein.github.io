@@ -24,11 +24,14 @@ public GitHub repositories as project cards.
 - Tests: `node --test test/script.test.cjs` with a Node.js version supporting `node:test`.
 - JavaScript syntax: `node --check assets/script.js`.
 - Initial-theme syntax: `node --check assets/theme.js`.
+- Theme-controls syntax: `node --check assets/theme-controls.js`.
 - Tests use Node's built-in VM, DOM stubs, and mocked fetch responses; no npm dependencies.
 
 ## Architecture Pointers
 
 - `index.html`: generic account fallback, profile placeholders, accessible shell, and project fallback.
+- `404.html`: compact profile and recovery page. It shares the profile cache and
+  theme scripts, fetches no social or project data, and keeps its error title.
 - `assets/theme.js`: applies the saved or system theme in the head before the stylesheet and body render.
 - `assets/theme-controls.js`: shared theme toggle and preference synchronization.
 - `assets/script.js`: public profile/social loading and
@@ -74,6 +77,8 @@ public GitHub repositories as project cards.
   static fallbacks; hide empty optional fields and deduplicate validated links.
   Refresh data on page load without requiring a site commit or deployment, subject
   to the one-hour response cache.
+  Profile/social refreshes reuse retained link nodes and preserve keyboard focus
+  when reordering links.
 - Latest-release and license requests enrich only confirmed displayed projects, independently
   of repository loading. Missing or failed releases leave no empty version row;
   successful responses use the same one-hour cache. Update only each release
@@ -112,6 +117,10 @@ public GitHub repositories as project cards.
 - Keep the site dependency-free; do not add a build step, package.json, or dependencies
   without an explicit request.
 - Work directly on `main` under the project's configured shipping policy.
+- For co-author audits, check commits reachable from the active branch; ignore
+  superseded rewritten histories retained only by older release tags.
+- Project cards are not clickable containers. Keep hover and keyboard-focus feedback
+  on their individual links; do not add a card hover border or shadow.
 - Keep links underlined and interactive controls at least 44px tall for mobile touch
   targets.
 
@@ -163,4 +172,4 @@ Read and follow these adopted project rules:
 - .claude/rules/design.md
 - .claude/rules/interaction.md
 
-<!-- last-reviewed: 188106139a5d9fc29cbc1fdab754cd40039dcc2d -->
+<!-- last-reviewed: 18fc7cfa662dbf4dce4a3953cf721d2d854611ca -->
