@@ -134,12 +134,24 @@
       "reason": "Reopened for identity boundaries in the current filtered listing: existing owner fixtures are lowercase and duplicate fixtures use identical spelling, so case-sensitive regressions could omit eligible projects or repeat cards unnoticed.",
       "action": "improve",
       "layer": "component",
-      "state": "open",
+      "state": "resolved",
       "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
       "tests": [
         "test/script.test.cjs::lists owned public projects without Pages or a homepage, excluding forks and self",
         "test/script.test.cjs::does not repeat cards when repositories move between API pages"
-      ]
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs::lists owned public projects without Pages or a homepage, excluding forks and self",
+          "test/script.test.cjs::does not repeat cards when repositories move between API pages"
+        ],
+        "method": "runtime",
+        "outcome": "Both focused cases passed with zero failures, skips or todos. A mixed-case owner remains eligible; exact and case-variant duplicates are suppressed while first spelling, full order and all prior assertions are preserved.",
+        "commit": "9e6e66dc583527747fa0da1f55e34ad9531313cc",
+        "command": "node --test --test-name-pattern='lists owned public projects|does not repeat cards' test/script.test.cjs",
+        "scope": "Project-root Node VM component tests with synthetic repositories and mocked API pagination; no network or browser."
+      }
     },
     {
       "id": "g-5407dfd8-56ad-426d-ad65-d0a91a522ecd",
@@ -298,11 +310,28 @@
       "reason": "Reopened for shared-loader consumers: the harness loads theme-controls independently of real markup, synthesizes compact 404 mode, and never reads the legal layout. Missing asset wiring, compact markers or avatar referrer protection could therefore pass the current tests.",
       "action": "add",
       "layer": "component",
-      "state": "open",
+      "state": "resolved",
       "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
       "tests": [
-        "test/script.test.cjs::index.html provides every element the script reads and keeps scripts and styles external"
-      ]
+        "test/script.test.cjs::index.html provides every element the script reads and keeps scripts and styles external",
+        "test/script.test.cjs::index.html theme toggle holds hidden moon and sun icons and keeps its accessible name",
+        "test/script.test.cjs::404.html wires shared scripts to its real page shell",
+        "test/script.test.cjs::_layouts/legal.html wires shared scripts to its real page shell",
+        "test/script.test.cjs::index.html suppresses referrers on the profile avatar",
+        "test/script.test.cjs::404.html suppresses referrers on the profile avatar"
+      ],
+      "closure": {
+        "reason": "tested",
+        "refs": [
+          "test/script.test.cjs: homepage, 404 and legal-layout shell-contract assertions",
+          "test/script.test.cjs: profile-avatar referrer-policy assertions for index.html and 404.html"
+        ],
+        "method": "runtime",
+        "outcome": "The complete suite passed 148 tests with zero failures, skips or todos. All three configured JavaScript syntax checks and git diff --check passed. Four new cases and the extended homepage assertions protect shared assets/order, real compact 404 markup, accessible theme controls and avatar referrer suppression. Existing tests remain intact.",
+        "commit": "af74dd242e0a2745b9e4abe92412f2bcb0f28b10",
+        "command": "node --test test/script.test.cjs",
+        "scope": "Project-root Node VM tests and static reads of authored HTML/Jekyll templates; no browser rendering, Jekyll build, external requests or legal-validity verification."
+      }
     },
     {
       "id": "g-b7938d79-41bf-432b-b01a-44d976543340",
