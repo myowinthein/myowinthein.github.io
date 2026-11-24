@@ -375,7 +375,7 @@ function updateProjectControls() {
 async function refreshedProjectPage(page, response) {
   if (nextPage === page && !loading) {
     projectsBlocked = false;
-    await loadMoreProjects();
+    await loadMoreProjects(response);
   } else {
     // Refresh stored pages without replacing the cards a visitor is browsing.
     const visible = eligibleProjects(response.data).filter(project =>
@@ -400,13 +400,14 @@ function newProjects(repos, seen) {
   });
 }
 
-async function fetchNextProjects(onStale) {
+async function fetchNextProjects(onStale, recoveredResponse) {
   let projects = [];
   let stale = false;
   do {
     const page = nextPage;
-    const res = await cachedGitHub(projectPageUrl(page), isRepositoryPage, onStale,
+    const res = recoveredResponse || await cachedGitHub(projectPageUrl(page), isRepositoryPage, onStale,
       response => refreshedProjectPage(page, response));
+    recoveredResponse = null;
     stale = Boolean(res.stale);
     projects = newProjects(res.data, seenProjects);
     nextPage += 1;
@@ -534,7 +535,7 @@ function focusAfterLoad(firstNewCard) {
   target.focus();
 }
 
-async function loadMoreProjects() {
+async function loadMoreProjects(recoveredResponse) {
   if (loading || !hasMore || (loadMore.hidden && projectsBlocked)) return;
   loading = true;
   loadMore.setAttribute('aria-disabled', 'true');
@@ -553,7 +554,7 @@ async function loadMoreProjects() {
         showProjectBatch(previewProjects);
         renderCachedProjectDetails(previewProjects);
       }
-    });
+    }, recoveredResponse);
     showProjectBatch(projects);
     if (projects.length) firstNewCard = grid.children[displayedProjects.length];
     displayedProjects.push(...projects);
@@ -589,5 +590,5 @@ async function loadMoreProjects() {
   await Promise.allSettled(detailRequests);
 }
 
-loadMore?.addEventListener('click', loadMoreProjects);
+loadMore?.addEventListener('click', () => loadMoreProjects());
 Promise.allSettled(grid ? [loadProfile(), loadSocialLinks(), loadMoreProjects()] : [loadProfile()]);

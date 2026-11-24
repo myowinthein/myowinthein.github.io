@@ -684,6 +684,67 @@ test('recovers an initially uncached listing automatically after a rate-limit de
   assert.equal(sandbox.timers.size, 0);
 });
 
+for (const blockedReads of [false, true]) {
+  for (const status of [429, 503]) {
+    test(`uses a recovered listing without refetching when storage writes fail (reads blocked: ${blockedReads}, status: ${status})`, async () => {
+      let requests = 0;
+      const sandbox = loadScript(async () => {
+        requests += 1;
+        if (requests === 1) return apiResponse(status, {}, status === 429 ? { 'Retry-After': '60' } : {});
+        if (requests === 2) return response([repo('recovered')]);
+        return apiResponse(503, {});
+      }, {
+        now: CACHE_TEST_TIME,
+        storageApi: {
+          getItem() { if (blockedReads) throw new Error('Denied'); return null; },
+          setItem() { throw new Error('Storage write failed'); },
+        },
+      });
+      await sandbox.ready;
+      const get = id => sandbox.document.getElementById(id);
+      get('theme-toggle').focus();
+      assert.equal(requests, 1);
+      assert.match(get('grid').innerHTML, /Browse public repositories/);
+      await sandbox.runNextRetry();
+      assert.equal(requests, 2, 'The recovered response must not depend on a successful cache write');
+      assert.deepEqual(cardNames(get('grid').innerHTML), ['recovered']);
+      assert.equal(get('project-status').textContent, 'All 1 project loaded.');
+      assert.equal(sandbox.document.activeElement, get('theme-toggle'));
+      assert.equal(sandbox.timers.size, 0);
+    });
+  }
+}
+
+test('resumes a failed batch through an excluded recovered page without storage or unrequested pages', async () => {
+  const pages = [];
+  let secondPageAttempts = 0;
+  const sandbox = loadScript(async url => {
+    const page = new URL(url).searchParams.get('page');
+    pages.push(page);
+    if (page === '1') return response([repo('first')], true);
+    if (page === '2') return ++secondPageAttempts === 1
+      ? apiResponse(503, {}) : response([repo('excluded', { fork: true })], true);
+    if (page === '3') return response([repo('recovered')], true);
+    throw new Error('Unrequested page');
+  }, {
+    now: CACHE_TEST_TIME,
+    storageApi: { getItem() { return null; }, setItem() { throw new Error('Quota exceeded'); } },
+  });
+  await sandbox.ready;
+  const get = id => sandbox.document.getElementById(id);
+  const firstCard = get('grid').firstElementChild;
+  await get('load-more').dispatchEvent({ type: 'click' });
+  get('theme-toggle').focus();
+  assert.equal(get('load-more').hidden, true);
+  await sandbox.runNextRetry();
+  assert.deepEqual(pages, ['1', '2', '2', '3']);
+  assert.deepEqual(cardNames(get('grid').innerHTML), ['first', 'recovered']);
+  assert.equal(get('grid').firstElementChild, firstCard);
+  assert.equal(get('load-more').hidden, false);
+  assert.equal(sandbox.document.activeElement, get('theme-toggle'));
+  assert.equal(sandbox.timers.size, 0);
+});
+
 test('bounds temporary background retries with increasing delays and no visible error', async () => {
   let requests = 0;
   const sandbox = loadScript(async () => { requests += 1; return apiResponse(503, {}); }, { now: CACHE_TEST_TIME });
