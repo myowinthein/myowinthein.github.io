@@ -24,4 +24,4 @@ If something doesn’t work or you have a suggestion, [open an issue](https://gi
 
 All rights reserved. No project-wide reuse license is provided. © Myo Win Thein.
 
-<!-- last-reviewed: 78264c8855c2300c5cc8d9d23ef976aa5e667578 -->
+<!-- last-reviewed: ae502a75f68cc8bb042c52b04df8050e13a0494e -->
