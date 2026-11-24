@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "assessed_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
-  "full_scan_commit": "d4f318138f6f5459f1779a91f51eae742abf2d9f",
+  "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
+  "full_scan_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
   "cases": [
     {
       "id": "g-03063a55-0f7a-4615-ba49-bb1190a805a9",
@@ -119,37 +119,27 @@
     },
     {
       "id": "g-4c377636-98d1-4a5e-9c94-a04c1397ba47",
-      "expected": "The listing renders every synthetic repository in API order across pages using the requested page size, without omissions or duplicates.",
+      "expected": "The listing preserves eligible repositories in API order across requested pages without omissions or duplicates, including case-insensitive owner matching and repeated repository names with different casing.",
       "basis": [
-        "AGENTS.md: Domain Rules (all pages in updated order)",
-        "README.md: Usage (all results, recently updated order)",
-        "assets/script.js:39-51 (page-size dependent termination)",
-        "test/script.test.cjs:89-104 (fixture ignores requested page size; checks only count and first/last order)"
+        "AGENTS.md: case-insensitive owner and self-name comparisons; on-demand pagination",
+        "assets/script.js::eligibleProjects and newProjects",
+        "test/script.test.cjs::lists owned public projects without Pages or a homepage, excluding forks and self",
+        "test/script.test.cjs::does not repeat cards when repositories move between API pages"
       ],
       "paths": [
         "assets/script.js",
         "test/script.test.cjs"
       ],
       "priority": "medium",
-      "reason": "The API fixture always returns 100 items regardless of the request, so a page-size regression could pass tests while dropping real projects; current first/last checks also miss middle-list duplication.",
+      "reason": "Reopened for identity boundaries in the current filtered listing: existing owner fixtures are lowercase and duplicate fixtures use identical spelling, so case-sensitive regressions could omit eligible projects or repeat cards unnoticed.",
       "action": "improve",
       "layer": "component",
-      "state": "resolved",
-      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+      "state": "open",
+      "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
       "tests": [
-        "test/script.test.cjs::loads every repository once in updated order using API pagination"
-      ],
-      "closure": {
-        "reason": "tested",
-        "refs": [
-          "test/script.test.cjs::loads every repository once in updated order using API pagination"
-        ],
-        "method": "runtime",
-        "outcome": "All 18 tests passed with zero failures, skips, or todos. The pagination fixture honors request page size, and the complete ordered list of 101 repository names plus card count and request order is asserted.",
-        "commit": "1010faf91446204080e6cd8c076052432b83ebf8",
-        "command": "node --test test/script.test.cjs",
-        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic GitHub pagination over 101 repositories with a bounded request guard."
-      }
+        "test/script.test.cjs::lists owned public projects without Pages or a homepage, excluding forks and self",
+        "test/script.test.cjs::does not repeat cards when repositories move between API pages"
+      ]
     },
     {
       "id": "g-5407dfd8-56ad-426d-ad65-d0a91a522ecd",
@@ -238,11 +228,11 @@
         "test/script.test.cjs"
       ],
       "priority": "medium",
-      "reason": "A failure of project loading replaces the core page content; first-page network and parse failures are not currently asserted, and the existing error check does not prove that partial cards are absent.",
+      "reason": "The former visible all-or-nothing error-state expectation has been superseded by the documented quiet GitHub fallback and preservation of confirmed cards after later failures. Current tests protect those replacement contracts.",
       "action": "improve",
       "layer": "component",
-      "state": "resolved",
-      "assessed_commit": "1e146c0ef38c3cdfc0811ed1441dee3bf37ba49d",
+      "state": "obsolete",
+      "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
       "tests": [
         "test/script.test.cjs::shows an error when the first API page returns an HTTP error",
         "test/script.test.cjs::shows an error when the GitHub request rejects",
@@ -250,23 +240,21 @@
         "test/script.test.cjs::shows an error when a later API page fails"
       ],
       "closure": {
-        "reason": "tested",
+        "reason": "obsolete",
         "refs": [
-          "test/script.test.cjs::shows an error when the first API page returns an HTTP error",
-          "test/script.test.cjs::shows an error when the GitHub request rejects",
-          "test/script.test.cjs::shows an error when the GitHub response has invalid JSON",
-          "test/script.test.cjs::shows an error when a later API page fails"
+          "AGENTS.md: quiet API failures and retained cached or displayed content",
+          "assets/script.js::loadMoreProjects",
+          "test/script.test.cjs::keeps displayed cards after a later failure and retries the same API page",
+          "test/script.test.cjs: initial HTTP, rejection and invalid-JSON quiet fallback cases"
         ],
-        "method": "runtime",
-        "outcome": "All 18 tests passed with zero failures, skips, or todos. Four failure scenarios assert the complete error HTML so partial project cards cannot remain.",
-        "commit": "1010faf91446204080e6cd8c076052432b83ebf8",
-        "command": "node --test test/script.test.cjs",
-        "scope": "Node.js v24.21.0 VM component tests in the project root; synthetic initial HTTP, rejected fetch, invalid JSON, and later-page failure responses."
+        "method": "static",
+        "outcome": "Static contract review confirms the former visible error and discarded-card behavior is no longer intended; the current fallback and retained-card tests supersede it. This is not a new runtime pass.",
+        "commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294"
       }
     },
     {
       "id": "g-a47e0af1-3eab-4885-bf96-2ae2723e7b5d",
-      "expected": "In a real browser at 320, 390 and 1280px in light and dark themes: the theme toggle shows the moon in light and the sun in dark, stays at least 44px square, link hover and focus show a thicker underline without shifting layout, and Load more shows the progress cursor while loading.",
+      "expected": "In a real browser at 320, 390 and 1280px in light and dark themes: the theme toggle swaps moon/sun icons and remains at least 44px square; link hover/focus thickens underlines without layout shift; Load more delays spinner/progress feedback by 150ms, clears it on completion, and stops spinner rotation under reduced motion.",
       "basis": [
         "assets/style.css: .theme-toggle, .theme-icon-sun, [data-theme=\"dark\"] icon rules, a:is(:hover, :focus-visible) underline thickness, .load-more[aria-busy=\"true\"] cursor",
         "index.html theme-toggle SVG icons",
@@ -283,15 +271,15 @@
       "action": "manual",
       "layer": "manual",
       "state": "open",
-      "assessed_commit": "fbba0b6092fbf2d02aba86e12cf6986313908960",
+      "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
       "blocker": {
         "kind": "verification",
-        "note": "Needs a real-browser check by the developer; not yet performed."
+        "note": "Prior session browser samples do not complete the exact width/theme matrix or controlled slow Load more and reduced-motion states; owner sign-off remains outstanding. VM tests cannot establish painted appearance or cursors."
       }
     },
     {
       "id": "g-b4cadd14-fd5f-4166-8686-b8dbea6aaa0d",
-      "expected": "index.html provides every element ID that assets/script.js reads, links the external script and stylesheet, and contains no inline script or style blocks.",
+      "expected": "The homepage, compact 404 page and legal layout provide the DOM and ordered external assets their shared loaders need, accessible theme controls and no inline scripts/styles; profile avatar markup suppresses referrers.",
       "basis": [
         "AGENTS.md: Hard Safety Rules (no inline script or style blocks)",
         "assets/script.js: getElementById calls for theme-toggle, profile-*, page-*, grid, load-more, project-status",
@@ -299,29 +287,22 @@
       ],
       "paths": [
         "index.html",
+        "404.html",
+        "_layouts/legal.html",
+        "assets/theme.js",
+        "assets/theme-controls.js",
         "assets/script.js",
         "test/script.test.cjs"
       ],
       "priority": "medium",
-      "reason": "Renaming or removing an element ID in index.html makes the script throw on load and stops theme, profile and project loading on the public site, and no test would detect it; inline blocks would break a stated safety rule unnoticed.",
+      "reason": "Reopened for shared-loader consumers: the harness loads theme-controls independently of real markup, synthesizes compact 404 mode, and never reads the legal layout. Missing asset wiring, compact markers or avatar referrer protection could therefore pass the current tests.",
       "action": "add",
       "layer": "component",
-      "state": "resolved",
-      "assessed_commit": "a006b7401734ab31fb2465039c7c5a7c51d89301",
+      "state": "open",
+      "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
       "tests": [
         "test/script.test.cjs::index.html provides every element the script reads and keeps scripts and styles external"
-      ],
-      "closure": {
-        "reason": "tested",
-        "refs": [
-          "test/script.test.cjs::index.html provides every element the script reads and keeps scripts and styles external"
-        ],
-        "method": "runtime",
-        "outcome": "All 53 tests passed with zero failures, skips, or todos. The test checks all 11 harness element IDs in index.html, the linked script and stylesheet, and the absence of inline script or style blocks. A renamed ID and an inline style block in scratchpad copies each made it fail.",
-        "commit": "a2341f1225e1ab70448f8a6bf1c7604e521d14f3",
-        "command": "node --test test/script.test.cjs",
-        "scope": "Node.js v24.21.0 VM component tests in the project root; static read of index.html, with the harness ID list as the script's element contract."
-      }
+      ]
     },
     {
       "id": "g-b7938d79-41bf-432b-b01a-44d976543340",
@@ -420,6 +401,27 @@
         "outcome": "Reported by the developer from a visible Chrome run at 320px, 390px and 1280px widths against the local preview with controlled API and image responses: the tab icon is circular, the header moved 0px during delayed avatar loading, links are underlined, buttons are at least 44x44px, and all checks also passed in the dark theme. I did not run or inspect the browser evidence myself.",
         "commit": "50a7624a142d47b818acc16a3b9c01027912625a",
         "scope": "Chrome on the developer's machine, widths 320/390/1280px, light and dark themes, local preview with controlled responses; not the deployed site"
+      }
+    },
+    {
+      "id": "g-f37256df-1f9e-471e-81fe-4db7016d7a7a",
+      "expected": "A successful background social-account retry renders the recovered accounts without another request even when cache writes fail, preserving the bounded retry budget.",
+      "basis": [
+        "AGENTS.md: storage failures must not break live loading; retries are bounded",
+        "assets/script.js::retryGitHubRequests passes successful responses to callbacks",
+        "assets/script.js::loadSocialLinks ignores the response supplied to its refresh callback",
+        "test/script.test.cjs: blocked-storage retry cases cover repository recovery, while social recovery assumes writable storage"
+      ],
+      "paths": ["assets/script.js", "test/script.test.cjs"],
+      "priority": "medium",
+      "reason": "A recovered social response is refetched through loadSocialLinks when it could not be cached. If that extra request fails, recovered links remain absent and a fresh retry budget can be queued. This is a source-derived production defect, not an executed regression result.",
+      "action": "add",
+      "layer": "component",
+      "state": "open",
+      "assessed_commit": "5f9fdce64acae7ee4b5aab7e0b04567f24a36294",
+      "blocker": {
+        "kind": "verification",
+        "note": "Regression test and production repair are held for separate production-fix approval; do not encode the duplicate fetch as correct behavior."
       }
     },
     {
