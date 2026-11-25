@@ -350,6 +350,7 @@ main { width: 100%; max-width: 860px; }
 
 .card-release a, .card-license a, footer a { color: var(--muted); }
 .card-release a:hover, .card-license a:hover, footer a:hover { color: var(--brand); }
+footer a[aria-current="page"] { color: var(--text); }
 
 .card-status {
   margin-inline-start: auto;
